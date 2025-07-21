@@ -8,6 +8,7 @@ import Sapservice from '../pages/sapservice'
 import { Fragment } from 'react'
 import PrivateRoutes from './Private_route'; // adjust the path if needed
 import YoungBazerHealth from '../pages/YoungBazerHealth'
+import Youngbazerfruntend from '../pages/Youngbazerfruntend'
 
 const Addroute = () => {
     return (
