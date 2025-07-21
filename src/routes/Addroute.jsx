@@ -19,6 +19,7 @@ const Addroute = () => {
                     <Route path='/sapservices' element={<StatusGrid />} />
                     <Route path='/youngBazer' element={<YoungBazerHealth />} />
                     <Route path='/statusgrid' element={<Sapservice />} />
+                    <Route path='/fruntend_youngbazer' element={<Youngbazerfruntend />} />
                 </Route>
                 <Route path='/login' element={<Login />} />
                 <Route path='*' element={<NotFoundPage />} />
