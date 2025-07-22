@@ -24,6 +24,9 @@ const Youngbazerfruntend = () => {
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8">
+        {/* <h1 className="text-3xl font-bold mb-4">Young Bazer Health</h1>
+        <p className="text-lg mb-4">A health monitoring system for backend service status.</p> */}
+
         <div className="overflow-x-auto mt-8">
           <table className="min-w-full table-auto border-collapse bg-white border border-gray-200 shadow-sm text-sm text-gray-700">
             <thead className="bg-gray-100">
