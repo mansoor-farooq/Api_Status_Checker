@@ -293,7 +293,7 @@ const services = [
 
 const YoungBazerService = [
     { name: 'YoungBazer Backend', description: 'YoungBazer Backend', href: '/youngBazer', icon: null },
-    { name: 'Youngbazer fruntend', description: 'youngBazer Frontend services', href: '/fruntend_youngbazer', icon: null },
+    { name: 'YoungBazer Frontend', description: 'YoungBazer Frontend services', href: '/fruntend_youngbazer', icon: null },
 ];
 
 const sscpServices = [
@@ -498,7 +498,8 @@ const Header = () => {
                                                     <Disclosure.Panel className="pl-4 space-y-1">
                                                         {data.map(item => (
                                                             <a
-                                                                key={item.name}
+
+                                                                key={item.name} // 
                                                                 href={item.href}
                                                                 className="block py-1 text-sm font-normal text-black"
                                                             >
