@@ -1,387 +1,912 @@
-// import React, { useEffect, useLayoutEffect, useState } from 'react';
+
+// import React, { useEffect, useState, useMemo } from 'react';
+
 // import Layout from '../component/Layout';
 // import axios from 'axios';
+// import { IoEyeOff } from 'react-icons/io5';
+// import { useNavigate } from 'react-router-dom';
+
 // const YoungBazerHealth = () => {
-//const [status, setStatus] = useState('');
-//// useEffect(() => {
-//const fetchYoungBazerHealth = async () => {
-//try {
-//await axios.get('http://202.143.125.148:9000/health')
-//.then(response => {
-// console.log("Young Bazer health response:", response);
-// setStatus(response.data.status);
-//})
-//.catch(error => {
-// console.error("Error fetching Young Bazer health data:", error);
-// setStatus('ERROR');
-//});
-//} catch (error) {
-//console.error("Error fetching Young Bazer health data:", error);
-//setStatus('ERROR');
-//} };
-//fetchYoungBazerHealth();
-//// }, []);
-//return (
-//<Layout>
-//<div className="container mx-auto px-4 py-8">
-//<h1 className="text-3xl font-bold mb-4">Young Bazer Health</h1>
-//<p className="text-lg mb-4">A health monitoring system for backend service status.</p>
-//<div className="overflow-x-auto mt-8">
-// <table className="min-w-full table-auto border-collapse bg-white border border-gray-200 shadow-sm text-sm text-gray-700">
-//<thead className="bg-gray-100">
-//<tr>
-//<th className="px-4 py-3 border text-left">S.No</th>
-//<th className="px-4 py-3 border text-left">Service</th>
-//<th className="px-4 py-3 border text-left">Status</th>
-//</tr>
-//</thead>
-//<tbody>
-//<tr className="hover:bg-gray-50">
-//<td className="px-4 py-3 border">1</td>
-//<td className="px-4 py-3 border">Young Bazer Backend</td>
-//<td className="px-4 py-3 border font-semibold">
-//<span
-// className={`h-3 w-3 rounded-full inline-block${status === 'ERROR'
-//? 'bg-red-500'
-//: status === 'OK'
-//? 'bg-green-500'
-//: 'bg-yellow-500'
-//}`}
-//></span>
-//</td>
-//</tr>
-//</tbody>
-// </table>
-//</div>
-//</div>
-//</Layout>
-//);
+//     const [services, setServices] = useState({
+//         backend: { status: 'UNKNOWN', error: 'Active', loading: false },
+//         frontend: { status: 'UNKNOWN', error: 'Active', loading: false },
+//         product: { status: 'UNKNOWN', error: 'Active', loading: false },
+//         integration: { status: 'UNKNOWN', error: 'Active', loading: false },
+//         barcode: { status: 'UNKNOWN', error: 'Active', loading: false },
+//     });
+//     const [loading, setLoading] = useState(false);
+//     const [searchTerm, setSearchTerm] = useState('');
+//     const [search, setSearch] = useState('');
+//     const [errors, setErrors] = useState('');
+//     const [statusSearch, setStatusSearch] = useState('');
+//     const [currentPage, setCurrentPage] = useState(1);
+//     const itemsPerPage = 10;
+
+//     const navigate = useNavigate();
+
+//     const servicesData = [
+//         { id: 1, name: 'Young Bazer Backend', status: services.backend.status, error: services.backend.error },
+//         { id: 2, name: 'Frontend Service', status: services.frontend.status, error: services.frontend.error },
+//         { id: 3, name: 'Product Service', status: services.product.status, error: services.product.error },
+//         { id: 4, name: 'Integration Service', status: services.integration.status, error: services.integration.error },
+//         { id: 5, name: 'Barcode Service', status: services.barcode.status, error: services.barcode.error },
+//     ];
+//     const fetchBackend = async () => {
+//         setServices((prev) => ({ ...prev, backend: { ...prev.backend, loading: true } }));
+//         try {
+//             const response = await axios.get('http://202.143.125.148:9000/health');
+//             setServices((prev) => ({
+//                 ...prev,
+//                 backend: { status: response.data.status === 200 ? 'Active' : 'Active', error: 'Active', loading: false },
+//             }));
+//         } catch (error) {
+//             setServices((prev) => ({
+//                 ...prev,
+//                 backend: { status: 'ERROR', error: error.message, loading: false },
+//             }));
+//         }
+//     };
+
+//     const getFrontendYoungbazer = async () => {
+//         setServices((prev) => ({ ...prev, backend: { ...prev.frontend, loading: true } }));
+//         try {
+//             const response = await axios.get('http://202.143.125.148:9001/get_tickers');
+//             setServices((prev) => ({
+//                 ...prev,
+//                 frontend: { status: response.status === 200 ? 'Active' : 'ERROR', error: 'Active', loading: false },
+//             }));
+//         } catch (error) {
+//             setServices((prev) => ({
+//                 ...prev,
+//                 frontend: { status: 'ERROR', error: error.message, loading: false },
+//             }));
+//         }
+//     };
+
+//     const getDummyJson = async () => {
+//         setServices((prev) => ({ ...prev, backend: { ...prev.product, loading: true } }));
+//         try {
+//             const response = await axios.get('https://dummyjson.com/products/2');
+//             setServices((prev) => ({
+//                 ...prev,
+//                 product: { status: response.status === 200 ? 'Active' : 'ERROR', error: 'Active', loading: false },
+//             }));
+//         } catch (error) {
+//             setServices((prev) => ({
+//                 ...prev,
+//                 product: { status: 'ERROR', error: error.message, loading: false },
+//             }));
+//         }
+//     };
+
+//     const dummyTest = async () => {
+//         setServices((prev) => ({ ...prev, backend: { ...prev.integration, loading: true } }));
+//         try {
+//             const response = await axios.get('https://dummyjson.com/test');
+//             setServices((prev) => ({
+//                 ...prev,
+//                 integration: { status: response.status === 200 ? 'Active' : 'ERROR', error: 'Active', loading: false },
+//             }));
+//         } catch (error) {
+//             setServices((prev) => ({
+//                 ...prev,
+//                 integration: { status: 'ERROR', error: error.message, loading: false },
+//             }));
+//         }
+//     };
+
+//     const getBarcode = async () => {
+//         setServices((prev) => ({ ...prev, backend: { ...prev.barcode, loading: true } }));
+//         try {
+//             const response = await axios.get('http://192.168.1.161:5500/get-bar-code');
+//             setServices((prev) => ({
+//                 ...prev,
+//                 barcode: { status: response.status === 200 ? 'Active' : 'ERROR', error: 'Active', loading: false },
+//             }));
+//         } catch (error) {
+//             setServices((prev) => ({
+//                 ...prev,
+//                 barcode: { status: 'ERROR', error: error.message, loading: false },
+//             }));
+//         }
+//     };
+
+//     const getAllRefresh = async () => {
+//         await Promise.all([
+//             fetchBackend(),
+//             getFrontendYoungbazer(),
+//             getDummyJson(),
+//             dummyTest(),
+//             getBarcode(),
+//         ]);
+//     };
+
+//     const filteredData = useMemo(() => {
+//         return servicesData.filter(
+//             (service) =>
+//                 service.id.toString().includes(searchTerm) &&
+//                 service.name.toLowerCase().includes(search.toLowerCase()) &&
+//                 service.error.toLowerCase().includes(errors.toLowerCase()) &&
+//                 (statusSearch === '' || service.status.toLowerCase().includes(statusSearch.toLowerCase()))
+//         );
+//     }, [searchTerm, search, errors, statusSearch, services]);
+
+//     const indexOfLastItem = currentPage * itemsPerPage;
+//     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+//     const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
+
+//     useEffect(() => {
+//         getAllRefresh();
+//     }, []);
+
+//     return (
+//         <Layout>
+//             <div className="container mx-auto mt-5 px-4 py-6">
+//                 <div className="flex justify-end mb-4  mt-6">
+//                     <button
+//                         onClick={getAllRefresh}
+//                         className="px-4 py-1.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors duration-200 shadow-md disabled:opacity-50"
+//                         disabled={loading}
+//                     >
+//                         {loading ? 'Refreshing...' : 'Refresh Services'}
+//                     </button>
+//                     <button
+//                         onClick={() => navigate('/add_sevice')}
+//                         className="px-4 py-1.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors duration-200 shadow-md"
+//                     >
+//                         Add Service
+//                     </button>
+//                 </div>
+//                 <div className="overflow-x-auto bg-white rounded-xl shadow-lg border border-gray-200">
+//                     {loading ? (
+//                         <div className="p-4 text-center text-gray-500">Loading...</div>
+//                     ) : (
+//                         <table className="w-full table-auto text-sm border-separate border-spacing-0 border-2 border-gray-300">
+//                             <thead className="bg-indigo-600 text-white text-xs uppercase sticky top-0">
+//                                 <tr>
+//                                     <th className="px-3 py-2 font-medium border-2 border-gray-300">S.No</th>
+//                                     <th className="px-3 py-2 font-medium border-2 border-gray-300">Service</th>
+//                                     <th className="px-3 py-2 font-medium border-2 border-gray-300">Error</th>
+//                                     <th className="px-3 py-2 font-medium border-2 border-gray-300">Status</th>
+//                                     <th className="px-3 py-2 font-medium border-2 border-gray-300">Action</th>
+//                                 </tr>
+//                                 <tr className="bg-gray-100">
+//                                     <td className="px-3 py-2 border-2 border-gray-300">
+//                                         <input
+//                                             type="text"
+//                                             placeholder="S.No"
+//                                             className="w-full px-2 py-1 text-xs text-black border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+//                                             value={searchTerm}
+//                                             onChange={(e) => setSearchTerm(e.target.value)}
+//                                         />
+//                                     </td>
+//                                     <td className="px-3 py-2 border-2 border-gray-300">
+//                                         <input
+//                                             type="text"
+//                                             placeholder="Service"
+//                                             className="w-full px-2 py-1 text-xs  text-black  border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+//                                             value={search}
+//                                             onChange={(e) => setSearch(e.target.value)}
+//                                         />
+//                                     </td>
+//                                     <td className="px-3 py-2 border-2 border-gray-300">
+//                                         <input
+//                                             type="text"
+//                                             placeholder="Error"
+//                                             className="w-full px-2 py-1 text-xs  text-black border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+//                                             value={errors}
+//                                             onChange={(e) => setErrors(e.target.value)}
+//                                         />
+//                                     </td>
+//                                     <td className="px-3 py-2 border-2 border-gray-300">
+//                                         <input
+//                                             type="text"
+//                                             placeholder="Status"
+//                                             className="w-full px-2 py-1 text-xs  text-black border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+//                                             value={statusSearch}
+//                                             onChange={(e) => setStatusSearch(e.target.value)}
+//                                         />
+//                                     </td>
+//                                     <td className="px-3 py-2 border-2 border-gray-300 text-center text-gray-400 text-xs">Search</td>
+//                                 </tr>
+//                             </thead>
+//                             <tbody>
+//                                 {currentItems.map((service) => (
+//                                     <tr key={service.id} className="hover:bg-gray-50 transition-colors">
+//                                         <td className="px-3 py-2 text-black text-center border-2 border-gray-300">{service.id}</td>
+//                                         <td className="px-3 py-2 text-black border-2 border-gray-300">{service.name}</td>
+//                                         <td className="px-3 py-2 text-black text-center border-2 border-gray-300">
+//                                             {services[service.name.split(' ')[0].toLowerCase()]?.loading ? 'Loading...' : service.error}
+//                                         </td>
+//                                         <td className="px-3 py-2 text-black text-center border-2 border-gray-300">
+//                                             {services[service.name.split(' ')[0].toLowerCase()]?.loading ? (
+//                                                 'Loading...'
+//                                             ) : (
+//                                                 <div className="flex items-center justify-center">
+//                                                     <span
+//                                                         className={`h-2.5 w-2.5 rounded-full mr-1.5 ${service.status === 'OK' ? 'bg-green-500' : service.status === 'ERROR' ? 'bg-red-500' : 'bg-yellow-500'
+//                                                             }`}
+//                                                     ></span>
+//                                                     <span className="text-xs">{service.status}</span>
+//                                                 </div>
+//                                             )}
+//                                         </td>
+//                                         <td className="px-3 py-2 text-center border-2 border-gray-300">
+//                                             <button
+//                                                 className="p-1.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-full transition-colors"
+//                                                 aria-label="View details"
+//                                             >
+//                                                 <IoEyeOff className="text-sm" />
+//                                             </button>
+//                                         </td>
+//                                     </tr>
+//                                 ))}
+//                             </tbody>
+//                         </table>
+//                     )}
+//                     <div className="flex justify-center items-center bg-gradient-to-r from-indigo-700 to-indigo-600 text-white text-xs uppercase rounded-lg mt-4 space-x-3 py-3 shadow-md">
+//                         <button
+//                             className="px-3 py-1.5 text-xs font-medium text-white bg-indigo-800 rounded-lg hover:bg-indigo-900 disabled:opacity-50 transition-colors"
+//                             onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+//                             disabled={currentPage === 1 || loading}
+//                         >
+//                             Prev
+//                         </button>
+//                         <span className="text-xs font-medium text-white bg-indigo-800 px-3 py-1.5 rounded-lg">
+//                             Page {currentPage} of {Math.ceil(filteredData.length / itemsPerPage)}
+//                         </span>
+//                         <button
+//                             className="px-3 py-1.5 text-xs font-medium text-white bg-indigo-800 rounded-lg hover:bg-indigo-900 disabled:opacity-50 transition-colors"
+//                             onClick={() =>
+//                                 setCurrentPage((prev) => (prev < Math.ceil(filteredData.length / itemsPerPage) ? prev + 1 : prev))
+//                             }
+//                             disabled={currentPage === Math.ceil(filteredData.length / itemsPerPage) || loading}
+//                         >
+//                             Next
+//                         </button>
+//                     </div>
+//                 </div>
+//             </div>
+//         </Layout>
+//     );
 // };
+
 // export default YoungBazerHealth;
 
-import React, { useEffect, useState } from 'react';
+
+// import React, { useEffect, useState, useMemo } from 'react';
+// import Layout from '../component/Layout';
+// import axios from 'axios';
+// import { IoEyeOff } from 'react-icons/io5';
+// import { useNavigate } from 'react-router-dom';
+
+// const YoungBazerHealth = () => {
+//     const [services, setServices] = useState({
+//         backend: { status: 'UNKNOWN', error: 'Active', loading: false },
+//         frontend: { status: 'UNKNOWN', error: 'Active', loading: false },
+//         product: { status: 'UNKNOWN', error: 'Active', loading: false },
+//         integration: { status: 'UNKNOWN', error: 'Active', loading: false },
+//         barcode: { status: 'UNKNOWN', error: 'Active', loading: false },
+//     });
+//     const [loading, setLoading] = useState(false);
+//     const [searchTerm, setSearchTerm] = useState('');
+//     const [search, setSearch] = useState('');
+//     const [errors, setErrors] = useState('');
+//     const [statusSearch, setStatusSearch] = useState('');
+//     const [currentPage, setCurrentPage] = useState(1);
+//     const itemsPerPage = 10;
+
+//     const navigate = useNavigate();
+
+//     const servicesData = [
+//         { id: 1, name: 'Young Bazer Backend', status: services.backend.status, error: services.backend.error },
+//         { id: 2, name: 'Frontend Service', status: services.frontend.status, error: services.frontend.error },
+//         { id: 3, name: 'Product Service', status: services.product.status, error: services.product.error },
+//         { id: 4, name: 'Integration Service', status: services.integration.status, error: services.integration.error },
+//         { id: 5, name: 'Barcode Service', status: services.barcode.status, error: services.barcode.error },
+//     ];
+
+//     const fetchBackend = async () => {
+//         setServices((prev) => ({ ...prev, backend: { ...prev.backend, loading: true } }));
+//         try {
+//             const response = await axios.get('http://202.143.125.148:9000/health');
+//             setServices((prev) => ({
+//                 ...prev,
+//                 backend: { status: response.status === 200 ? 'Active' : 'ERROR', error: 'Active', loading: false },
+//             }));
+//         } catch (error) {
+//             setServices((prev) => ({
+//                 ...prev,
+//                 backend: { status: 'ERROR', error: error.message, loading: false },
+//             }));
+//         }
+//     };
+
+//     const getFrontendYoungbazer = async () => {
+//         setServices((prev) => ({ ...prev, frontend: { ...prev.frontend, loading: true } }));
+//         try {
+//             const response = await axios.get('http://202.143.125.148:9001/get_tickers');
+//             setServices((prev) => ({
+//                 ...prev,
+//                 frontend: { status: response.status === 200 ? 'Active' : 'ERROR', error: 'Active', loading: false },
+//             }));
+//         } catch (error) {
+//             setServices((prev) => ({
+//                 ...prev,
+//                 frontend: { status: 'ERROR', error: error.message, loading: false },
+//             }));
+//         }
+//     };
+
+//     const getDummyJson = async () => {
+//         setServices((prev) => ({ ...prev, product: { ...prev.product, loading: true } }));
+//         try {
+//             const response = await axios.get('https://dummyjson.com/products/2');
+//             setServices((prev) => ({
+//                 ...prev,
+//                 product: { status: response.status === 200 ? 'Active' : 'ERROR', error: 'Active', loading: false },
+//             }));
+//         } catch (error) {
+//             setServices((prev) => ({
+//                 ...prev,
+//                 product: { status: 'ERROR', error: error.message, loading: false },
+//             }));
+//         }
+//     };
+
+//     const dummyTest = async () => {
+//         setServices((prev) => ({ ...prev, integration: { ...prev.integration, loading: true } }));
+//         try {
+//             const response = await axios.get('https://dummyjson.com/test');
+//             setServices((prev) => ({
+//                 ...prev,
+//                 integration: { status: response.status === 200 ? 'Active' : 'ERROR', error: 'Active', loading: false },
+//             }));
+//         } catch (error) {
+//             setServices((prev) => ({
+//                 ...prev,
+//                 integration: { status: 'ERROR', error: error.message, loading: false },
+//             }));
+//         }
+//     };
+
+//     const getBarcode = async () => {
+//         setServices((prev) => ({ ...prev, barcode: { ...prev.barcode, loading: true } }));
+//         try {
+//             const response = await axios.get('http://192.168.1.161:5500/get-bar-code');
+//             setServices((prev) => ({
+//                 ...prev,
+//                 barcode: { status: response.status === 200 ? 'Active' : 'ERROR', error: 'Active', loading: false },
+//             }));
+//         } catch (error) {
+//             setServices((prev) => ({
+//                 ...prev,
+//                 barcode: { status: 'ERROR', error: error.message, loading: false },
+//             }));
+//         }
+//     };
+
+//     const getAllRefresh = async () => {
+//         setLoading(true);
+//         await Promise.all([
+//             fetchBackend(),
+//             getFrontendYoungbazer(),
+//             getDummyJson(),
+//             dummyTest(),
+//             getBarcode(),
+//         ]);
+//         setLoading(false);
+//     };
+
+//     const filteredData = useMemo(() => {
+//         return servicesData.filter(
+//             (service) =>
+//                 service.id.toString().includes(searchTerm) &&
+//                 service.name.toLowerCase().includes(search.toLowerCase()) &&
+//                 service.error.toLowerCase().includes(errors.toLowerCase()) &&
+//                 (statusSearch === '' || service.status.toLowerCase().includes(statusSearch.toLowerCase()))
+//         );
+//     }, [searchTerm, search, errors, statusSearch, services]);
+
+//     const indexOfLastItem = currentPage * itemsPerPage;
+//     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+//     const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
+
+//     useEffect(() => {
+//         getAllRefresh();
+//     }, []);
+
+//     return (
+//         <Layout>
+//             <div className="container mx-auto mt-5 px-4 py-6">
+//                 <div className="flex justify-end mb-4 mt-6">
+//                     <button
+//                         onClick={getAllRefresh}
+//                         className="px-4 py-1.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors duration-200 shadow-md disabled:opacity-50"
+//                         disabled={loading}
+//                     >
+//                         {loading ? 'Refreshing...' : 'Refresh Services'}
+//                     </button>
+//                     <button
+//                         onClick={() => navigate('/add_sevice')}
+//                         className="px-4 py-1.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors duration-200 shadow-md"
+//                     >
+//                         Add Service
+//                     </button>
+//                 </div>
+//                 <div className="overflow-x-auto bg-white rounded-xl shadow-lg border border-gray-200">
+//                     {loading ? (
+//                         <div className="p-4 text-center text-gray-500">Loading...</div>
+//                     ) : (
+//                         <table className="w-full table-auto text-sm border-separate border-spacing-0 border-2 border-gray-300">
+//                             <thead className="bg-indigo-600 text-white text-xs uppercase sticky top-0">
+//                                 <tr>
+//                                     <th className="px-3 py-2 font-medium border-2 border-gray-300">S.No</th>
+//                                     <th className="px-3 py-2 font-medium border-2 border-gray-300">Service</th>
+//                                     <th className="px-3 py-2 font-medium border-2 border-gray-300">Error</th>
+//                                     <th className="px-3 py-2 font-medium border-2 border-gray-300">Status</th>
+//                                     <th className="px-3 py-2 font-medium border-2 border-gray-300">Action</th>
+//                                 </tr>
+//                                 <tr className="bg-gray-100">
+//                                     <td className="px-3 py-2 border-2 border-gray-300">
+//                                         <input
+//                                             type="text"
+//                                             placeholder="S.No"
+//                                             className="w-full px-2 py-1 text-xs text-black border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+//                                             value={searchTerm}
+//                                             onChange={(e) => setSearchTerm(e.target.value)}
+//                                         />
+//                                     </td>
+//                                     <td className="px-3 py-2 border-2 border-gray-300">
+//                                         <input
+//                                             type="text"
+//                                             placeholder="Service"
+//                                             className="w-full px-2 py-1 text-xs text-black border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+//                                             value={search}
+//                                             onChange={(e) => setSearch(e.target.value)}
+//                                         />
+//                                     </td>
+//                                     <td className="px-3 py-2 border-2 border-gray-300">
+//                                         <input
+//                                             type="text"
+//                                             placeholder="Error"
+//                                             className="w-full px-2 py-1 text-xs text-black border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+//                                             value={errors}
+//                                             onChange={(e) => setErrors(e.target.value)}
+//                                         />
+//                                     </td>
+//                                     <td className="px-3 py-2 border-2 border-gray-300">
+//                                         <input
+//                                             type="text"
+//                                             placeholder="Status"
+//                                             className="w-full px-2 py-1 text-xs text-black border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+//                                             value={statusSearch}
+//                                             onChange={(e) => setStatusSearch(e.target.value)}
+//                                         />
+//                                     </td>
+//                                     <td className="px-3 py-2 border-2 border-gray-300 text-center text-gray-400 text-xs">Search</td>
+//                                 </tr>
+//                             </thead>
+//                             <tbody>
+//                                 {currentItems.map((service) => (
+//                                     <tr key={service.id} className="hover:bg-gray-50 transition-colors">
+//                                         <td className="px-3 py-2 text-black text-center border-2 border-gray-300">{service.id}</td>
+//                                         <td className="px-3 py-2 text-black border-2 border-gray-300">{service.name}</td>
+//                                         <td className="px-3 py-2 text-black text-center border-2 border-gray-300">
+//                                             {services[service.name.split(' ')[0].toLowerCase()]?.loading ? 'Loading...' : service.error}
+//                                         </td>
+//                                         <td className="px-3 py-2 text-black text-center border-2 border-gray-300">
+//                                             {services[service.name.split(' ')[0].toLowerCase()]?.loading ? (
+//                                                 'Loading...'
+//                                             ) : (
+//                                                 <div className="flex items-center justify-center">
+//                                                     <span
+//                                                         className={`h-2.5 w-2.5 rounded-full mr-1.5 ${service.status === 'Active' ? 'bg-green-500' : service.status === 'ERROR' ? 'bg-red-500' : 'bg-yellow-500'
+//                                                             }`}
+//                                                     ></span>
+//                                                     <span className="text-xs">{service.status}</span>
+//                                                 </div>
+//                                             )}
+//                                         </td>
+//                                         <td className="px-3 py-2 text-center border-2 border-gray-300">
+//                                             <button
+//                                                 className="p-1.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-full transition-colors"
+//                                                 aria-label="View details"
+//                                             >
+//                                                 <IoEyeOff className="text-sm" />
+//                                             </button>
+//                                         </td>
+//                                     </tr>
+//                                 ))}
+//                             </tbody>
+//                         </table>
+//                     )}
+//                     <div className="flex justify-center items-center bg-gradient-to-r from-indigo-700 to-indigo-600 text-white text-xs uppercase rounded-lg mt-4 space-x-3 py-3 shadow-md">
+//                         <button
+//                             className="px-3 py-1.5 text-xs font-medium text-white bg-indigo-800 rounded-lg hover:bg-indigo-900 disabled:opacity-50 transition-colors"
+//                             onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+//                             disabled={currentPage === 1 || loading}
+//                         >
+//                             Prev
+//                         </button>
+//                         <span className="text-xs font-medium text-white bg-indigo-800 px-3 py-1.5 rounded-lg">
+//                             Page {currentPage} of {Math.ceil(filteredData.length / itemsPerPage)}
+//                         </span>
+//                         <button
+//                             className="px-3 py-1.5 text-xs font-medium text-white bg-indigo-800 rounded-lg hover:bg-indigo-900 disabled:opacity-50 transition-colors"
+//                             onClick={() =>
+//                                 setCurrentPage((prev) => (prev < Math.ceil(filteredData.length / itemsPerPage) ? prev + 1 : prev))
+//                             }
+//                             disabled={currentPage === Math.ceil(filteredData.length / itemsPerPage) || loading}
+//                         >
+//                             Next
+//                         </button>
+//                     </div>
+//                 </div>
+//             </div>
+//         </Layout>
+//     );
+// };
+
+// export default YoungBazerHealth;
+
+
+
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import Layout from '../component/Layout';
 import axios from 'axios';
-import { Responsive, WidthProvider } from "react-grid-layout";
-import "react-grid-layout/css/styles.css";
-import "react-resizable/css/styles.css";
-import { IoEyeOff } from "react-icons/io5";
-import { data } from 'react-router-dom';
-const ResponsiveGridLayout = WidthProvider(Responsive);
+import { IoEyeOff } from 'react-icons/io5';
+import { useNavigate } from 'react-router-dom';
+
+// Custom debounce function
+const debounce = (func, wait) => {
+    let timeout;
+    return (...args) => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func(...args), wait);
+    };
+};
 
 const YoungBazerHealth = () => {
-
-    const [status, setStatus] = useState('');
-    const [errorStatus, setErrorStatus] = useState(false);
-    const [frontendStatus, setFrontendStatus] = useState();
-    const [dummyStatus, setDummyStatus] = useState();
-    const [testStatus, setTestStatus] = useState();
-    const [barcode, setbarcode] = useState();
+    const [services, setServices] = useState({
+        backend: { status: 'UNKNOWN', error: 'Active', loading: false },
+        frontend: { status: 'UNKNOWN', error: 'Active', loading: false },
+        product: { status: 'UNKNOWN', error: 'Active', loading: false },
+        integration: { status: 'UNKNOWN', error: 'Active', loading: false },
+        barcode: { status: 'UNKNOWN', error: 'Active', loading: false },
+    });
+    const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-    const [search, setsearch] = useState('');
-    const [Errors, setError] = useState('');
-    const [StatusSearch, setStatusSearch] = useState('')
-
+    const [search, setSearch] = useState('');
+    const [errors, setErrors] = useState('');
+    const [statusSearch, setStatusSearch] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage] = useState(10);
+    const itemsPerPage = 10;
 
+    const navigate = useNavigate();
 
+    // In-memory cache
+    const cache = useMemo(() => new Map(), []);
+    const CACHE_DURATION = 60000; // Cache for 1 minute
+    const API_TIMEOUT = 5000; // 5 seconds timeout per API
 
-    function fetechbackend() {
-        axios.get('http://202.143.125.148:9000/health')
-            .then(response => {
-                console.log("Young Bazer health response:", response);
-                setStatus(response.data.status)
-            })
+    const servicesData = [
+        { id: 1, name: 'Young Bazer Backend', status: services.backend.status, error: services.backend.error },
+        { id: 2, name: 'Frontend Service', status: services.frontend.status, error: services.frontend.error },
+        { id: 3, name: 'Product Service', status: services.product.status, error: services.product.error },
+        { id: 4, name: 'Integration Service', status: services.integration.status, error: services.integration.error },
+        { id: 5, name: 'Barcode Service', status: services.barcode.status, error: services.barcode.error },
+    ];
+
+    // Helper function to add timeout to API calls
+    const withTimeout = async (promise, ms) => {
+        const timeout = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Request timed out')), ms)
+        );
+        return Promise.race([promise, timeout]);
     };
-    const get_fruntend_youngbazer = async () => {
+
+    // Helper function to check cache
+    const getCachedData = (key) => {
+        const cached = cache.get(key);
+        if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+            console.log(`Using cached data for ${key}`);
+            return cached.data;
+        }
+        return null;
+    };
+
+    // Helper function to set cache
+    const setCachedData = (key, data) => {
+        console.log(`Caching data for ${key}`);
+        cache.set(key, { data, timestamp: Date.now() });
+    };
+
+    const fetchBackend = async () => {
+        const cacheKey = 'backend';
+        const cachedData = getCachedData(cacheKey);
+        if (cachedData) return cachedData;
+
+        setServices((prev) => ({ ...prev, backend: { ...prev.backend, loading: true } }));
         try {
-            const response = await axios.get('http://202.143.125.148:9001/get_tickers');
-            setFrontendStatus(response.status);
-            setErrorStatus(false); // no error
+            console.log('Fetching backend API');
+            const response = await withTimeout(axios.get('http://202.143.125.148:9000/health'), API_TIMEOUT);
+            const data = { status: response.status === 200 ? 'Active' : 'ERROR', error: 'Active', loading: false };
+            setServices((prev) => ({ ...prev, backend: data }));
+            setCachedData(cacheKey, data);
+            return data;
         } catch (error) {
-            setErrorStatus(true); // error occurred
+            const data = { status: 'ERROR', error: error.message, loading: false };
+            setServices((prev) => ({ ...prev, backend: data }));
+            setCachedData(cacheKey, data);
+            return data;
         }
     };
 
-    //product service
-    const get_dummyjson = async () => {
-        axios.get('https://dummyjson.com/products/2')
-            .then(response => {
-                setDummyStatus(response.status)
-                console.log("dummy json ", response.status)
-            })
+    const getFrontendYoungbazer = async () => {
+        const cacheKey = 'frontend';
+        const cachedData = getCachedData(cacheKey);
+        if (cachedData) return cachedData;
+
+        setServices((prev) => ({ ...prev, frontend: { ...prev.frontend, loading: true } }));
+        try {
+            console.log('Fetching frontend API');
+            const response = await withTimeout(axios.get('http://202.143.125.148:9001/get_tickers'), API_TIMEOUT);
+            const data = { status: response.status === 200 ? 'Active' : 'ERROR', error: 'Active', loading: false };
+            setServices((prev) => ({ ...prev, frontend: data }));
+            setCachedData(cacheKey, data);
+            return data;
+        } catch (error) {
+            const data = { status: 'ERROR', error: error.message, loading: false };
+            setServices((prev) => ({ ...prev, frontend: data }));
+            setCachedData(cacheKey, data);
+            return data;
+        }
     };
 
-    //integration service
-    const dummytest = async () => {
-        axios.get('https://dummyjson.com/test')
-            .then(response => {
-                setTestStatus(response.status)
-                console.log("dummytest", response.status)
-            })
+    const getDummyJson = async () => {
+        const cacheKey = 'product';
+        const cachedData = getCachedData(cacheKey);
+        if (cachedData) return cachedData;
+
+        setServices((prev) => ({ ...prev, product: { ...prev.product, loading: true } }));
+        try {
+            console.log('Fetching product API');
+            const response = await withTimeout(axios.get('https://dummyjson.com/products/2'), API_TIMEOUT);
+            const data = { status: response.status === 200 ? 'Active' : 'ERROR', error: 'Active', loading: false };
+            setServices((prev) => ({ ...prev, product: data }));
+            setCachedData(cacheKey, data);
+            return data;
+        } catch (error) {
+            const data = { status: 'ERROR', error: error.message, loading: false };
+            setServices((prev) => ({ ...prev, product: data }));
+            setCachedData(cacheKey, data);
+            return data;
+        }
     };
 
-    const getbarcode = () => {
-        axios.get('http://192.168.1.161:5500/get-bar-code')
-            .then(response => {
-                console.log("getbarcode", response)
-                setbarcode(response)
-            })
-    }
+    const dummyTest = async () => {
+        const cacheKey = 'integration';
+        const cachedData = getCachedData(cacheKey);
+        if (cachedData) return cachedData;
 
-
-
-
-    const getallrefrsh = () => {
-        fetechbackend();
-        dummytest();
-        get_dummyjson();
-        get_fruntend_youngbazer();
-        getbarcode();
+        setServices((prev) => ({ ...prev, integration: { ...prev.integration, loading: true } }));
+        try {
+            console.log('Fetching integration API');
+            const response = await withTimeout(axios.get('https://dummyjson.com/test'), API_TIMEOUT);
+            const data = { status: response.status === 200 ? 'Active' : 'ERROR', error: 'Active', loading: false };
+            setServices((prev) => ({ ...prev, integration: data }));
+            setCachedData(cacheKey, data);
+            return data;
+        } catch (error) {
+            const data = { status: 'ERROR', error: error.message, loading: false };
+            setServices((prev) => ({ ...prev, integration: data }));
+            setCachedData(cacheKey, data);
+            return data;
+        }
     };
 
-    const filteredData = Array.isArray(data)
-        ? data.filter(service => service.status === selectedStatus || selectedStatus === "All")
-        : [];
-    console.log(errorStatus)
-    console.log("yadummy_json", dummyStatus)
-    console.log("yadummy_json", dummyStatus)
+    const getBarcode = async () => {
+        const cacheKey = 'barcode';
+        const cachedData = getCachedData(cacheKey);
+        if (cachedData) return cachedData;
 
-    console.log("testStatus", testStatus)
+        setServices((prev) => ({ ...prev, barcode: { ...prev.barcode, loading: true } }));
+        try {
+            console.log('Fetching barcode API');
+            const response = await withTimeout(axios.get('http://192.168.1.161:5500/get-bar-code'), API_TIMEOUT);
+            const data = { status: response.status === 200 ? 'Active' : 'ERROR', error: 'Active', loading: false };
+            setServices((prev) => ({ ...prev, barcode: data }));
+            setCachedData(cacheKey, data);
+            return data;
+        } catch (error) {
+            const data = { status: 'ERROR', error: error.message, loading: false };
+            setServices((prev) => ({ ...prev, barcode: data }));
+            setCachedData(cacheKey, data);
+            return data;
+        }
+    };
 
-    console.log("frontendStatus", frontendStatus)
+    const getAllRefresh = useCallback(
+        debounce(async (forceRefresh = false) => {
+            console.log('Starting refresh, forceRefresh:', forceRefresh);
+            setLoading(true);
+            try {
+                // Clear cache if forceRefresh is true
+                if (forceRefresh) {
+                    console.log('Clearing cache');
+                    cache.clear();
+                }
+                await Promise.all([
+                    fetchBackend(),
+                    getFrontendYoungbazer(),
+                    getDummyJson(),
+                    dummyTest(),
+                    getBarcode(),
+                ]);
+                console.log('All API calls completed');
+            } catch (error) {
+                console.error('Error during refresh:', error);
+            } finally {
+                setLoading(false);
+            }
+        }, 500),
+        []
+    );
 
-    getallrefrsh();
+    const handleRefreshClick = () => {
+        // Allow force refresh on double-click or specific condition
+        getAllRefresh(false); // Normal refresh
+    };
+
+    const filteredData = useMemo(() => {
+        return servicesData.filter(
+            (service) =>
+                service.id.toString().includes(searchTerm) &&
+                service.name.toLowerCase().includes(search.toLowerCase()) &&
+                service.error.toLowerCase().includes(errors.toLowerCase()) &&
+                (statusSearch === '' || service.status.toLowerCase().includes(statusSearch.toLowerCase()))
+        );
+    }, [searchTerm, search, errors, statusSearch, services]);
 
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
 
+    useEffect(() => {
+        console.log('Initial refresh on mount');
+        getAllRefresh(false);
+    }, [getAllRefresh]);
 
     return (
         <Layout>
-            <div className="container mx-auto mt-4 px-4 py-8">
-                <div className="overflow-x-auto mt-8 ">
-                    <div className="min-w-full inline-block align-middle">
-                        <div className="flex justify-end mb-4 ">
-                            <button onClick={getallrefrsh}
-                                className="px-4 py-2 sm:text-base font-semiboldsm:px-4 sm:py-2 bg-blue-500 text-white text-smrounded hover:bg-blue-600 transition-colors">
-                                Refresh Services
-                            </button>
-                        </div>
-                        <div className="overflow-hidden border border-gray-200 rounded-lg shadow-sm">
-
-                            <table className="min-w-full table-auto border-collapse bg-white  border border-gray-200 shadow-sm text-sm  text-gray-700 ">
-                                <thead className="bg-gray-100 text-sm text-gray-900 border">
-                                    {/* Table Header */}
-                                    <tr>
-                                        <th className="w-16 px-2 py-1 border uppercase tracking-wider">S.No</th>
-                                        <th className="px-3 py-1 border uppercase tracking-wider">Service</th>
-                                        <th className="w-10 px-2 py-1 border uppercase tracking-wider">Error</th>
-                                        <th className="w-10 px-2 py-1 border uppercase tracking-wider">Status</th>
-                                        <th className="w-10 px-2 py-1 border uppercase tracking-wider">Action</th>
-                                    </tr>
-
-                                    {/* Search Row */}
-                                    <tr className="bg-gray-50">
-                                        <td className="w-16 px-2 py-1 border">
-                                            <input
-                                                type="text"
-                                                placeholder="S.No"
-                                                className="w-full px-2 py-1 border rounded text-xs"
-                                                value={searchTerm}
-                                                onChange={(e) => setSearchTerm(e.target.value)}
-                                            />
-                                        </td>
-                                        <td className="px-2 py-1 border">
-                                            <input
-                                                type="text"
-                                                placeholder="Service"
-                                                className="w-full px-2 py-1 border rounded text-xs"
-                                                value={search}
-                                                onChange={(e) => setsearch(e.target.value)}
-                                            />
-                                        </td>
-                                        <td className="w-10 px-2 py-1 border">
-                                            <input
-                                                type="text"
-                                                placeholder="Error"
-                                                className="w-full px-2 py-1 border rounded text-xs"
-                                                value={Errors}
-                                                onChange={(e) => setError(e.target.value)}
-                                            />
-                                        </td>
-                                        <td className="w-10 px-2 py-1 border">
-                                            <input
-                                                type="text"
-                                                placeholder="Status"
-                                                className="w-full px-2 py-1 border rounded text-xs"
-                                                value={StatusSearch}
-                                                onChange={(e) => setStatusSearch(e.target.value)}
-                                            />
-                                        </td>
-                                        <td className="w-10 px-2 py-1 border text-center text-gray-400 text-xs">Search</td>
-                                    </tr>
-                                </thead>
-
-
-                                <tbody>
-
-                                    {/* 1. Backend */}
-                                    <tr className="hover:bg-gray-50">
-                                        {/* S.No column */}
-                                        <td className="w-12 px-2 py-1 text-sm text-gray-900 border">1</td>
-
-                                        {/* Service column */}
-                                        <td className="w-20   px-3 py-1 text-sm text-gray-900 border">
-                                            Young Bazer Backend
-                                        </td>
-
-                                        <td className="w-20   px-3 py-1 text-sm text-gray-900 border">
-                                            Error
-                                        </td>
-
-                                        {/* Status column */}
-                                        <td className="w-10 px-2 py-1 text-sm text-gray-900 border">
-                                            <div className="flex items-center">
+            <div className="container mx-auto mt-5 px-4 py-6">
+                <div className="flex justify-end mb-4 mt-6">
+                    <button
+                        onClick={handleRefreshClick}
+                        className="px-4 py-1.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors duration-200 shadow-md disabled:opacity-50"
+                        disabled={loading}
+                    >
+                        {loading ? 'Refreshing...' : 'Refresh Services'}
+                    </button>
+                    <button
+                        onClick={() => navigate('/add_sevice')}
+                        className="px-4 py-1.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors duration-200 shadow-md"
+                    >
+                        Add Service
+                    </button>
+                </div>
+                <div className="overflow-x-auto bg-white rounded-xl shadow-lg border border-gray-200">
+                    <table className="w-full table-auto text-sm border-separate border-spacing-0 border-2 border-gray-300">
+                        <thead className="bg-indigo-600 text-white text-xs uppercase sticky top-0">
+                            <tr>
+                                <th className="px-3 py-2 font-medium border-2 border-gray-300">S.No</th>
+                                <th className="px-3 py-2 font-medium border-2 border-gray-300">Service</th>
+                                <th className="px-3 py-2 font-medium border-2 border-gray-300">Error</th>
+                                <th className="px-3 py-2 font-medium border-2 border-gray-300">Status</th>
+                                <th className="px-3 py-2 font-medium border-2 border-gray-300">Action</th>
+                            </tr>
+                            <tr className="bg-gray-100">
+                                <td className="px-3 py-2 border-2 border-gray-300">
+                                    <input
+                                        type="text"
+                                        placeholder="S.No"
+                                        className="w-full px-2 py-1 text-xs text-black border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                    />
+                                </td>
+                                <td className="px-3 py-2 border-2 border-gray-300">
+                                    <input
+                                        type="text"
+                                        placeholder="Service"
+                                        className="w-full px-2 py-1 text-xs text-black border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        value={search}
+                                        onChange={(e) => setSearch(e.target.value)}
+                                    />
+                                </td>
+                                <td className="px-3 py-2 border-2 border-gray-300">
+                                    <input
+                                        type="text"
+                                        placeholder="Error"
+                                        className="w-full px-2 py-1 text-xs text-black border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        value={errors}
+                                        onChange={(e) => setErrors(e.target.value)}
+                                    />
+                                </td>
+                                <td className="px-3 py-2 border-2 border-gray-300">
+                                    <input
+                                        type="text"
+                                        placeholder="Status"
+                                        className="w-full px-2 py-1 text-xs text-black border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        value={statusSearch}
+                                        onChange={(e) => setStatusSearch(e.target.value)}
+                                    />
+                                </td>
+                                <td className="px-3 py-2 border-2 border-gray-300 text-center text-gray-400 text-xs">Search</td>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {currentItems.map((service) => (
+                                <tr key={service.id} className="hover:bg-gray-50 transition-colors">
+                                    <td className="px-3 py-2 text-black text-center border-2 border-gray-300">{service.id}</td>
+                                    <td className="px-3 py-2 text-black border-2 border-gray-300">{service.name}</td>
+                                    <td className="px-3 py-2 text-black text-center border-2 border-gray-300">
+                                        {services[service.name.split(' ')[0].toLowerCase()]?.loading ? 'Loading...' : service.error}
+                                    </td>
+                                    <td className="px-3 py-2 text-black text-center border-2 border-gray-300">
+                                        {services[service.name.split(' ')[0].toLowerCase()]?.loading ? (
+                                            'Loading...'
+                                        ) : (
+                                            <div className="flex items-center justify-center">
                                                 <span
-                                                    className={`h-3 w-3 rounded-full inline-block mr-1 ${status === 'ERROR' ? 'bg-red-500' :
-                                                        status === 'OK' ? 'bg-green-500' : 'bg-yellow-500'
+                                                    className={`h-2.5 w-2.5 rounded-full mr-1.5 ${service.status === 'Active' ? 'bg-green-500' : service.status === 'ERROR' ? 'bg-red-500' : 'bg-yellow-500'
                                                         }`}
                                                 ></span>
-                                                <span className="hidden sm:inline">{status}</span> {/* optional status text */}
+                                                <span className="text-xs">{service.status}</span>
                                             </div>
-                                        </td>
-
-                                        {/* Action column */}
-                                        <td className="w-20 px-2 py-1 text-sm text-gray-900 border text-center">
-                                            <button className="p-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-full transition-colors">
-                                                <IoEyeOff className="text-lg" />
-                                            </button>
-                                        </td>
-                                    </tr>
-
-
-                                    {/* 2. Frontend */}
-                                    <tr className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-4 py-3 text-sm sm:text-base text-gray-900 border">2</td>
-                                        <td className="px-4 py-3 text-sm sm:text-base text-gray-900 border">Frontend Service</td>
-                                        <td className="w-20   px-3 py-1 text-sm text-gray-900 border">
-                                            Error
-                                        </td>
-                                        <td className="w-10 px-2 py-1 text-sm text-gray-900 border">
-                                            <div className="flex items-center">
-                                                <span className={`h-3 w-3 rounded-full inline-block mr-2 ${errorStatus ? 'bg-red-500' :
-                                                    frontendStatus === 200 ? 'bg-green-500' :
-                                                        'bg-yellow-500'
-                                                    }`}></span>
-                                            </div>
-                                        </td>
-                                        {/* Action column */}
-                                        <td className="w-20 px-2 py-1 text-sm text-gray-900 border text-center">
-                                            <button className="p-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-full transition-colors">
-                                                <IoEyeOff className="text-lg" />
-                                            </button>
-                                        </td>
-
-                                    </tr>
-
-                                    {/* 3. Product Service */}
-                                    <tr className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-4 py-3 text-sm sm:text-base text-gray-900 border">3</td>
-                                        <td className="px-4 py-3 text-sm sm:text-base text-gray-900 border">Product Service</td>
-                                        <td className="w-20   px-3 py-1 text-sm text-gray-900 border">
-                                            Error
-                                        </td>
-                                        <td className="w-10 px-2 py-1 text-sm text-gray-900 border">
-                                            <div className="flex items-center">
-                                                <span className={`h-3 w-3 rounded-full inline-block mr-2 ${dummyStatus === 200 ? 'bg-green-500' : 'bg-yellow-500'
-                                                    }`}></span>
-                                            </div>
-                                        </td>
-                                        {/* Action column */}
-                                        <td className="w-20 px-2 py-1 text-sm text-gray-900 border text-center">
-                                            <button className="p-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-full transition-colors">
-                                                <IoEyeOff className="text-lg" />
-                                            </button>
-                                        </td>
-                                    </tr>
-
-                                    {/* 4. Integration Service */}
-                                    <tr className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-4 py-3 text-sm sm:text-base text-gray-900 border">4</td>
-                                        <td className="px-4 py-3 text-sm sm:text-base text-gray-900 border">Integration Service</td>
-                                        <td className="w-20   px-3 py-1 text-sm text-gray-900 border">
-                                            Error
-                                        </td>
-                                        <td className="w-10 px-2 py-1 text-sm text-gray-900 border">
-                                            <div className="flex items-center">
-                                                <span className={`h-3 w-3 rounded-full inline-block mr-2 ${testStatus === 200 ? 'bg-green-500' : 'bg-yellow-500'
-                                                    }`}></span>
-                                            </div>
-                                        </td>
-                                        {/* Action column */}
-                                        <td className="w-20 px-2 py-1 text-sm text-gray-900 border text-center">
-                                            <button className="p-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-full transition-colors">
-                                                <IoEyeOff className="text-lg" />
-                                            </button>
-                                        </td>
-
-                                    </tr>
-
-                                    {/* 4. Integration Service */}
-                                    <tr className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-4 py-3 text-sm sm:text-base text-gray-900 border">4</td>
-                                        <td className="px-4 py-3 text-sm sm:text-base text-gray-900 border">Integration Service</td>
-                                        <td className="w-20   px-3 py-1 text-sm text-gray-900 border">
-                                            Error
-                                        </td>
-                                        <td className="w-10 px-2 py-1 text-sm text-gray-900 border">
-                                            <div className="flex items-center">
-                                                <span className={`h-3 w-3 rounded-full inline-block mr-2 ${testStatus === 200 ? 'bg-green-500' : 'bg-yellow-500'
-                                                    }`}></span>
-                                            </div>
-                                        </td>
-                                        {/* Action column */}
-                                        <td className="w-20 px-2 py-1 text-sm text-gray-900 border text-center">
-                                            <button className="p-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-full transition-colors">
-                                                <IoEyeOff className="text-lg" />
-                                            </button>
-                                        </td>
-
-                                    </tr>
-
-                                </tbody>
-                            </table>
-                            <div className="flex justify-center mt-4 space-x-2">
-                                <button
-                                    className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
-                                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                                    disabled={currentPage === 1}
-                                >
-                                    Prev
-                                </button>
-                                <span className="px-4 py-1 text-sm">Page {currentPage}</span>
-                                <button
-                                    className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
-                                    onClick={() =>
-                                        setCurrentPage(prev =>
-                                            prev < Math.ceil(filteredData.length / itemsPerPage) ? prev + 1 : prev
-                                        )
-                                    }
-                                    disabled={currentPage === Math.ceil(filteredData.length / itemsPerPage)}
-                                >
-                                    Next
-                                </button>
-                            </div>
-
-                        </div>
+                                        )}
+                                    </td>
+                                    <td className="px-3 py-2 text-center border-2 border-gray-300">
+                                        <button
+                                            className="p-1.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-full transition-colors"
+                                            aria-label="View details"
+                                        >
+                                            <IoEyeOff className="text-sm" />
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                    <div className="flex justify-center items-center bg-gradient-to-r from-indigo-700 to-indigo-600 text-white text-xs uppercase rounded-lg mt-4 space-x-3 py-3 shadow-md">
+                        <button
+                            className="px-3 py-1.5 text-xs font-medium text-white bg-indigo-800 rounded-lg hover:bg-indigo-900 disabled:opacity-50 transition-colors"
+                            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                            disabled={currentPage === 1 || loading}
+                        >
+                            Prev
+                        </button>
+                        <span className="text-xs font-medium text-white bg-indigo-800 px-3 py-1.5 rounded-lg">
+                            Page {currentPage} of {Math.ceil(filteredData.length / itemsPerPage)}
+                        </span>
+                        <button
+                            className="px-3 py-1.5 text-xs font-medium text-white bg-indigo-800 rounded-lg hover:bg-indigo-900 disabled:opacity-50 transition-colors"
+                            onClick={() =>
+                                setCurrentPage((prev) => (prev < Math.ceil(filteredData.length / itemsPerPage) ? prev + 1 : prev))
+                            }
+                            disabled={currentPage === Math.ceil(filteredData.length / itemsPerPage) || loading}
+                        >
+                            Next
+                        </button>
                     </div>
                 </div>
             </div>
-        </Layout >
+        </Layout>
     );
 };
 
 export default YoungBazerHealth;
+
+
+
