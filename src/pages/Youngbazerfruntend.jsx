@@ -5,17 +5,10 @@ import Layout from '../component/Layout';
 import axios from 'axios';
 import { IoEyeOff } from 'react-icons/io5';
 import { useNavigate } from 'react-router-dom';
+import { functions } from 'lodash';
 
 
 const Youngbazerfruntend = () => {
-
-  // const [services, setServices] = useState({
-  //   backend: { status: 'UNKNOWN', error: 'Active', loading: false },
-  //   frontend: { status: 'UNKNOWN', error: 'Active', loading: false },
-  //   product: { status: 'UNKNOWN', error: 'Active', loading: false },
-  //   integration: { status: 'UNKNOWN', error: 'Active', loading: false },
-  //   barcode: { status: 'UNKNOWN', error: 'Active', loading: false },
-  // });
 
   const [services, setServices] = useState([]);
   const [servicesdata, setservicesdata] = useState([])
@@ -45,6 +38,68 @@ const Youngbazerfruntend = () => {
   }, [])
 
 
+  function mapingdata() {
+    // const url = Array.isArray(services.api_url) ? services.api_url.join('') : services.api_url;
+
+    const data = services.map((dt, index) => {
+      // if (dt.method === 'GET') {
+      //   axios.get(dt.api_url)
+      //     .then((response) => {
+      //       console.log("mapingdata", response);
+      //       // setservicesdata(response)
+      //       setservicesdata(prev => [...prev, response]);
+      //     })
+      //     .catch((error) => console.error("GET error:", error));
+
+      // }
+
+      if (dt.method === 'POST') {
+        axios.post(dt.api_url, dt.request_payload)
+          .then((response) => {
+            console.log("postapi", response);
+            setservicesdata(prev => [...prev, response])
+            // [...setservicesdata(response)]
+          })
+          .catch((error) => console.error("GET error:", error));
+      }
+
+      if (dt.method === 'PUT') {
+        axios.put(dt.api_url, dt.request_payload)
+          .then((response) => {
+            console.log("putapi", response);
+            setservicesdata(prev => [...prev, response])
+          })
+          .catch((error) => console.error("GET error:", error));
+      }
+
+      // 'PATCH', 'DELETE'
+      if (dt.method === 'PATCH' || dt.method === 'DELETE') {
+        axios[dt.method](dt.api_url, dt.request_payload)
+          .then((response) => {
+            console.log("patchapi", response);
+            setservicesdata(prev => [...prev, response])
+
+          })
+          .catch((error) => console.error("GET error:", error));
+      }
+      // axios.all(url, dt.request_payload)
+
+      // .then((response) => {
+      //   console.log("mapingdata", response);
+      //   setservicesdata([...servicesdata, response])
+
+      // })
+
+    })
+  }
+
+
+  // useEffect(()=>{
+
+  // },[])
+
+
+  console.log("services", services);
 
   // const servicesData = [
   //   { id: 1, name: 'Young Bazer Backend', status: services.backend.status, error: services.backend.error },
@@ -84,10 +139,12 @@ const Youngbazerfruntend = () => {
         <div className="flex justify-end mb-4 mt-6">
           <button
             // onClick={handleRefreshClick}
+            onClick={mapingdata}
             className="px-4 py-1.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors duration-200 shadow-md disabled:opacity-50"
-            disabled={loading}
+          // disabled={loading}
           >
-            {loading ? 'Refreshing...' : 'Refresh Services'}
+            {/* {loading ? 'Refreshing...' : 'Refresh Services'} */}
+            Test
           </button>
           <button
             onClick={() => navigate('/add_sevice')}
@@ -146,12 +203,8 @@ const Youngbazerfruntend = () => {
                 <td className="px-3 py-2 border-2 border-gray-300 text-center text-gray-400 text-xs">Search</td>
               </tr>
             </thead>
-
-
-
-
-            <tbody>
-              {/* {currentItems.map((service) => ( */}
+            {/* <tbody>
+         
               {currentItems.map((service, index) => (
                 <tr key={service.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-3 py-2 text-black text-center border-2 border-gray-300">{index + 1}</td>
@@ -159,10 +212,7 @@ const Youngbazerfruntend = () => {
                   <td className="px-3 py-2 text-black text-center border-2 border-gray-300">
                     {services[
                       (service?.services_name?.split?.(' ')[0] || '').toLowerCase()
-
-
                     ]?.loading ? 'Loading...' : service.error}
-
                   </td>
                   <td className="px-3 py-2 text-black text-center border-2 border-gray-300">
                     {services[service.name.split(' ')[0].toLowerCase()]?.loading ? (
@@ -187,6 +237,47 @@ const Youngbazerfruntend = () => {
                   </td>
                 </tr>
               ))}
+            </tbody> */}
+            <tbody>
+              <tr className="hover:bg-gray-50 transition-colors">
+                <td className="px-3 py-2 text-black text-center border-2 border-gray-300">1</td>
+                <td className="px-3 py-2 text-black border-2 border-gray-300">Health Check</td>
+                <td className="px-3 py-2 text-black text-center border-2 border-gray-300">No Errors</td>
+                <td className="px-3 py-2 text-black text-center border-2 border-gray-300">
+                  <div className="flex items-center justify-center">
+                    <span className="h-2.5 w-2.5 rounded-full mr-1.5 bg-green-500"></span>
+                    <span className="text-xs">Active</span>
+                  </div>
+                </td>
+                <td className="px-3 py-2 text-center border-2 border-gray-300">
+                  <button
+                    className="p-1.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-full transition-colors"
+                    aria-label="View details"
+                  >
+                    <IoEyeOff className="text-sm" />
+                  </button>
+                </td>
+              </tr>
+
+              <tr className="hover:bg-gray-50 transition-colors">
+                <td className="px-3 py-2 text-black text-center border-2 border-gray-300">2</td>
+                <td className="px-3 py-2 text-black border-2 border-gray-300">User Service</td>
+                <td className="px-3 py-2 text-black text-center border-2 border-gray-300">Timeout</td>
+                <td className="px-3 py-2 text-black text-center border-2 border-gray-300">
+                  <div className="flex items-center justify-center">
+                    <span className="h-2.5 w-2.5 rounded-full mr-1.5 bg-red-500"></span>
+                    <span className="text-xs">ERROR</span>
+                  </div>
+                </td>
+                <td className="px-3 py-2 text-center border-2 border-gray-300">
+                  <button
+                    className="p-1.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-full transition-colors"
+                    aria-label="View details"
+                  >
+                    <IoEyeOff className="text-sm" />
+                  </button>
+                </td>
+              </tr>
             </tbody>
 
 
