@@ -369,10 +369,6 @@ const Youngbazerfruntend = () => {
             </div>
           </div>
 
-
-
-
-
         </div>
         {/* </div> */}
       </div>
