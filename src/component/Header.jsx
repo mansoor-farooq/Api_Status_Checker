@@ -286,20 +286,20 @@ import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 
 // Dropdown data
-const services = [
-    { name: 'SAP Api Services', description: 'Api Services checking ', href: '/sapservices', icon: null },
-    { name: 'SAP Service ', description: 'Fast service 2', href: '/statusgrid', icon: null },
-];
+// const services = [
+//     { name: 'SAP Api Services', description: 'Api Services checking ', href: '/sapservices', icon: null },
+//     { name: 'SAP Service ', description: 'Fast service 2', href: '/statusgrid', icon: null },
+// ];
 
 const YoungBazerService = [
     { name: 'YoungBazer Backend', description: 'YoungBazer Backend', href: '/youngBazer', icon: null },
     { name: 'YoungBazer Frontend', description: 'YoungBazer Frontend services', href: '/fruntend_youngbazer', icon: null },
 ];
 
-const sscpServices = [
-    { name: 'SSCP 1', description: 'SSCP desc 1', href: '#', icon: null },
-    { name: 'SSCP 2', description: 'SSCP desc 2', href: '#', icon: null },
-];
+// const sscpServices = [
+//     { name: 'SSCP 1', description: 'SSCP desc 1', href: '#', icon: null },
+//     { name: 'SSCP 2', description: 'SSCP desc 2', href: '#', icon: null },
+// ];
 
 const Header = () => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -405,9 +405,9 @@ const Header = () => {
                         >
                             Home
                         </a>
-                        {renderDropdown('Services', services)}
+                        {/* {renderDropdown('Services', services)} */}
                         {renderDropdown('Dynamic', YoungBazerService)}
-                        {renderDropdown('SSCP', sscpServices)}
+                        {/* {renderDropdown('SSCP', sscpServices)} */}
 
                         {userData ? (
                             <Popover className="relative">
@@ -484,9 +484,7 @@ const Header = () => {
                                     <a href="/" className="block text-sm font-semibold text-black hover:text-indigo-600 transition-all duration-150">Home</a>
 
                                     {[
-                                        ['Services', services],
                                         ['Dynamic', YoungBazerService],
-                                        ['SSCP', sscpServices],
                                     ].map(([label, data]) => (
                                         <Disclosure key={label}>
                                             {({ open }) => (
@@ -498,7 +496,6 @@ const Header = () => {
                                                     <Disclosure.Panel className="pl-4 space-y-1">
                                                         {data.map(item => (
                                                             <a
-
                                                                 key={item.name} // 
                                                                 href={item.href}
                                                                 className="block py-1 text-sm font-normal text-black"

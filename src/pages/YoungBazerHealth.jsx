@@ -796,7 +796,7 @@ const YoungBazerHealth = () => {
                         Add Service
                     </button>
                 </div>
-                <div className="overflow-x-auto bg-white rounded-xl shadow-lg border border-gray-200">
+                <div className="overflow-x-auto bg-white rounded-lg shadow-lg border border-gray-200">
                     <table className="w-full table-auto text-sm border-separate border-spacing-0 border-2 border-gray-300">
                         <thead className="bg-indigo-600 text-white text-xs uppercase sticky top-0">
                             <tr>
