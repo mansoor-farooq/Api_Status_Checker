@@ -13,6 +13,7 @@ const Youngbazerfruntend = () => {
   const [errors, setErrors] = useState('');
   const [statusSearch, setStatusSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [mathodsearch, setmethodsearch] = useState('')
   const itemsPerPage = 8;
   const navigate = useNavigate();
   // CSS for loading animation
@@ -114,25 +115,14 @@ const Youngbazerfruntend = () => {
     }
   }, [services]);
 
-  // const filteredData = useMemo(() => {
-  //   // In filteredData useMemo
-  //   return servicesdata
-  //     .map((row, i) => ({ ...row, _index: i + 1 }))
-  //     .filter((row) => {
-  //       const name = row.services_name?.toLowerCase() || '';
-  //       const err = (row.error || '').toLowerCase();
-  //       const status = String(row.status_code || '').toLowerCase();
-  //       const snum = String(row._index).toLowerCase();
+  const filter_data = () => {
+    const fillterd_data = services.filter((iteam) => iteam.status_code !== 'UNSUPPORTED');
+    return fillterd_data;
 
-  //       return (
-  //         snum.includes(searchTerm.toLowerCase()) &&
-  //         name.includes(search.toLowerCase()) &&
-  //         err.includes(errors.toLowerCase()) &&
-  //         (statusSearch === '' || status.includes(statusSearch.toLowerCase()))
-  //       );
-  //     });
+  }
 
-  // }, [servicesdata, search, errors, statusSearch]);
+
+
   const statusDot = (code) => {
     if (code === 200) return 'bg-green-500';
     if (code === 'ERROR' || Number(code) >= 400) return 'bg-red-500';
@@ -140,6 +130,7 @@ const Youngbazerfruntend = () => {
   };
   const clearAllFilters = () => {
     setSearchTerm('');
+    setmethodsearch('');
     setSearch('');
     setErrors('');
     setStatusSearch('');
@@ -181,7 +172,7 @@ const Youngbazerfruntend = () => {
               {loading ? 'Refreshing...' : 'Refresh'}
             </button>
             <button
-              onClick={() => navigate('/add-service')}
+              onClick={() => navigate('/add_sevice')}
               disabled={loading}
               className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50 shadow-sm border border-indigo-700"
             >
@@ -198,6 +189,7 @@ const Youngbazerfruntend = () => {
                 <tr>
                   <th className="px-2 py-1 sm:px-3 sm:py-2">S.No</th>
                   <th className="px-2 py-1 sm:px-3 sm:py-2">Service</th>
+                  <th className="px-2 py-1 sm:px-3 sm:py-2">Method</th>
                   <th className="px-2 py-1 sm:px-3 sm:py-2">Status</th>
                   <th className="px-2 py-1 sm:px-3 sm:py-2">Error</th>
                   <th className="px-2 py-1 sm:px-3 sm:py-2 text-center">Actions</th>
@@ -244,11 +236,32 @@ const Youngbazerfruntend = () => {
                       )}
                     </div>
                   </td>
+                  {/* method */}
+                  <td className="border border-gray-200 p-[6px] sm:p-2">
+                    <div className="relative group">
+                      <input
+                        type="text"
+                        placeholder="Method"
+                        className="w-full px-2 py-[6px] sm:py-1.5  text-black text-[10px] sm:text-xs rounded-lg shadow-sm border border-gray-300 group-focus-within:border-indigo-500 focus:ring-2 focus:ring-indigo-400 transition-all duration-200"
+                        value={mathodsearch}
+                        onChange={(e) => setmethodsearch(e.target.value)}
+                      />
+                      {mathodsearch && (
+                        <button
+                          onClick={() => setmethodsearch('')}
+                          className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-700 transition duration-200"
+                        >
+                          <IoClose size={14} />
+                        </button>
+                      )}
+                    </div>
+                  </td>
 
                   {/* Status Filter */}
                   <td className="border border-gray-200 p-[6px] sm:p-2">
                     <div className="relative group">
                       <input
+                        title='ma anas bhi'
                         type="text"
                         placeholder="Status"
                         className="w-full px-2 py-[6px] sm:py-1.5  text-black text-[10px] sm:text-xs rounded-lg shadow-sm border border-gray-300 group-focus-within:border-indigo-500 focus:ring-2 focus:ring-indigo-400 transition-all duration-200"
@@ -303,6 +316,7 @@ const Youngbazerfruntend = () => {
                   <tr key={index} className="border-t">
                     <td className="px-2 py-1 sm:px-3 sm:py-2 text-black border-2 border-gray-300">{index + 1}</td>
                     <td className="px-2 py-1 sm:px-3 sm:py-2  text-black border-2 border-gray-300">{item.services_name}</td>
+                    <td className="px-2 py-1 sm:px-3 sm:py-2  text-black border-2 border-gray-300">{item.method}</td>
                     {/* <td className="px-2 py-1 sm:px-3 sm:py-2 text-black border-2 border-gray-300">{item.status_code}</td>
                    */}
 

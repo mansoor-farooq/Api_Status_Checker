@@ -400,7 +400,7 @@ const AddServices = () => {
                         <div className="flex justify-end mt-5 animate-fade-in-up animation-delay-600">
                             <button
                                 type="button"
-                                onClick={() => navigate('/youngBazer')}
+                                onClick={() => navigate('/fruntend_youngbazer')}
                                 className="px-4 py-1.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors duration-200 shadow-md disabled:opacity-50"
                                 aria-label="Add Service"
                             >
