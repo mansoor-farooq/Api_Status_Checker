@@ -239,7 +239,7 @@ const AddServices = () => {
                         setDescription('');
                         setName('');
                         setStatus(true);
-                        navigate('/youngBazer'); // Make sure navigate is defined using useNavigate()
+                        navigate('/fruntend_youngbazer'); // Make sure navigate is defined using useNavigate()
                     });
                 }
             })

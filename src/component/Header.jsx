@@ -292,7 +292,7 @@ import Swal from 'sweetalert2';
 // ];
 
 const YoungBazerService = [
-    { name: 'YoungBazer Backend', description: 'YoungBazer Backend', href: '/youngBazer', icon: null },
+    // { name: 'YoungBazer Backend', description: 'YoungBazer Backend', href: '/youngBazer', icon: null },
     { name: 'YoungBazer Frontend', description: 'YoungBazer Frontend services', href: '/fruntend_youngbazer', icon: null },
 ];
 
@@ -406,7 +406,7 @@ const Header = () => {
                             Home
                         </a>
                         {/* {renderDropdown('Services', services)} */}
-                        {renderDropdown('Dynamic', YoungBazerService)}
+                        {renderDropdown('SERVICES HEALTH ', YoungBazerService)}
                         {/* {renderDropdown('SSCP', sscpServices)} */}
 
                         {userData ? (
@@ -459,7 +459,7 @@ const Header = () => {
                     >
                         <div className="fixed inset-0 bg-black/50" aria-hidden="true" onClick={() => setMobileMenuOpen(false)} />
 
-                        <div className="fixed inset-y-0 right-0 flex max-w-xs w-full">
+                        <div className="fixed inset-y-0 right-0 flex max-w-xs w-full  text-black hover:text-indigo-600 transition-all">
                             <motion.div
                                 className="bg-white p-6 w-full h-full"
                                 initial={{ x: '100%' }}
@@ -484,12 +484,12 @@ const Header = () => {
                                     <a href="/" className="block text-sm font-semibold text-black hover:text-indigo-600 transition-all duration-150">Home</a>
 
                                     {[
-                                        ['Dynamic', YoungBazerService],
+                                        ['SERVICES HEALTH ', YoungBazerService],
                                     ].map(([label, data]) => (
                                         <Disclosure key={label}>
                                             {({ open }) => (
                                                 <>
-                                                    <Disclosure.Button className="flex justify-between w-full py-2 text-sm font-semibold text-black">
+                                                    <Disclosure.Button className="flex justify-between w-full py-2 text-sm font-semibold text-black hover:text-indigo-600 transition-all">
                                                         {label}
                                                         <ChevronDownIcon className={`h-5 w-5 transition-transform ${open ? 'rotate-180' : ''}`} />
                                                     </Disclosure.Button>
