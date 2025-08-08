@@ -717,8 +717,8 @@ const Youngbazerfruntend = () => {
           </div>
         </div>
 
-        <div className="w-full overflow-x-auto">
-          <div className="w-full overflow-x-auto rounded-lg shadow-md">
+        <div className="w-full overflow-x-auto shadow-xl">
+          <div className="w-full overflow-x-auto rounded-lg shadow-md shadow-xl">
             <table className="min-w-full text-[11px] text-sm text-left border">
               <thead className="bg-indigo-600 text-white text-[10px] sm:text-xs uppercase">
                 <tr>

@@ -75,7 +75,7 @@
 // export default AddServices
 
 
-
+import { SiGoogleauthenticator } from "react-icons/si";
 import { VscSymbolMethod } from "react-icons/vsc";
 import { useState } from 'react';
 import Layout from '../component/Layout';
@@ -92,54 +92,17 @@ const AddServices = () => {
     const [apikey, setapikey] = useState('');
     const [rqpayload, setrqpayload] = useState('');
     const [method, setmethod] = useState('GET' || 'POST' || 'PUT' || 'PATCH' || 'DELETE');
-
+    const [auth, setauth] = useState('');
 
     const navigate = useNavigate();
     console.log("status", status);
 
-    // const add_data = () => {
-    //     const payload = {
-    //         services_name: name,
-    //         description: description,
-    //         api_url: apiUrl,
-    //         status: status
-    //     };
-
-    //     axios.post('http://localhost:7070/add-services', payload)
-    //         .then((response) => {
-
-    //             console.log(response);
-    //             if (response.status === 200) {
-    //                 Swal.fire({
-    //                     title: 'Success',
-    //                     text: 'Data Added Successfully',
-    //                     icon: 'success',
-    //                     confirmButtonText: 'OK',
-    //                 })
-    //                     .then(() => {
-    //                         setApiUrl('');
-    //                         setDescription('');
-    //                         setName('');
-    //                         setStatus(true);
-    //                         navigate('/youngBazer');
-    //                     })
-    //             } caches((error) => {
-    //                 Swal.fire({
-    //                     icon: 'error',
-    //                     title: 'Error',
-    //                     text: error.response.data.message
-    //                 })
-    //             })
-
-
-    //         })
-
-    // }
 
     const add_data = () => {
         let parsedPayload = null;
+        let parsedAuth = null;
 
-        // ✅ If method is not GET, validate and parse rqpayload
+        // ✅ Check and parse request payload (for non-GET)
         if (method !== 'GET' && rqpayload) {
             try {
                 parsedPayload = JSON.parse(rqpayload);
@@ -147,28 +110,41 @@ const AddServices = () => {
                 Swal.fire({
                     icon: 'error',
                     title: 'Invalid JSON',
-                    text: 'Request Payload must be valid  like this forment JSON.\nExample: {"username": "admin", "password": "password"}',
+                    text: 'Request Payload must be valid JSON.\nExample: {"username": "admin", "password": "password"}',
                 });
                 return;
             }
         }
 
+        // ✅ Check and parse auth (only if provided)
+        if (auth.trim() !== '') {
+            try {
+                parsedAuth = JSON.parse(auth);
+            } catch (err) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Invalid Auth JSON',
+                    text: 'Auth must be valid JSON like {"Username": "user", "password": "pass"}',
+                });
+                return;
+            }
+        }
+
+        // ✅ Build final payload
         const payload = {
             services_name: name,
             description: description,
-            "status": status,
-            "api_url": apiUrl,
-            "api_key": apikey,
-            //     "method": method,
-            //     "request_payload": {
-            //         "username": "admin@example.com",
-            //         "password": "secure123"
-            //     }
-            // };
+            status: status,
+            api_url: apiUrl,
+            api_key: apikey,
             method: method,
-            request_payload: parsedPayload
+            request_payload: parsedPayload,
         };
 
+        // ✅ Only include `auth` if user entered it and it's valid
+        if (parsedAuth) {
+            payload.auth = parsedAuth;
+        }
         if (!name) {
             Swal.fire({
                 icon: 'error',
@@ -295,6 +271,22 @@ const AddServices = () => {
                                 onChange={(e) => setDescription(e.target.value)}
                                 className="w-full px-4 py-2 text-gray-900 font-semibold border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-300 hover:border-indigo-400 hover:shadow-md text-base"
                                 aria-label="Description"
+                            />
+                        </div>
+
+                        <div className="animate-fade-in-up animation-delay-300">
+                            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
+                                <SiGoogleauthenticator className="text-indigo-600 transition-transform duration-300 hover:scale-110" />
+                                auth
+                            </label>
+                            <input
+                                type="text"
+                                maxLength={300}
+                                placeholder="Enter Service auth"
+                                value={auth}
+                                onChange={(e) => setauth(e.target.value)}
+                                className="w-full px-4 py-2 text-gray-900 font-semibold border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-300 hover:border-indigo-400 hover:shadow-md text-base"
+                                aria-label="Auth"
                             />
                         </div>
 
