@@ -43,6 +43,7 @@ export default defineConfig({
         target: 'http://192.168.16.27:8000',
         changeOrigin: true,
         secure: false,
+        rewrite: (path) => path.replace(/^\/sap/, '/sap'),
       },
     },
   },
