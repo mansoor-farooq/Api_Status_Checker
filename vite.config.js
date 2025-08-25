@@ -45,6 +45,13 @@ export default defineConfig({
         secure: false,
         rewrite: (path) => path.replace(/^\/sap/, '/sap'),
       },
+      // Proxy external YoungsFood APIs during local development to avoid CORS
+      '/yplrmapp': {
+        target: 'https://apps.youngsfood.com',
+        changeOrigin: true,
+        secure: false, // set to true if remote has valid cert and you want strict verification
+        rewrite: (path) => path.replace(/^\/yplrmapp/, '/yplrmapp'),
+      },
     },
   },
   build: {

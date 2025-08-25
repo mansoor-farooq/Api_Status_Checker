@@ -22,7 +22,7 @@ import Layout from "../component/Layout";
 import Dashboard from "../component/RecentActivities";
 import axios from "axios";
 import Swal from "sweetalert2";
-
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://192.168.1.239:7070';
 const HomePage = () => {
     const [globalServicesData, setGlobalServicesData] = useState([]);
     const [services, setServices] = useState([]);
@@ -51,8 +51,8 @@ const HomePage = () => {
         setLoading(true);
         const controller = new AbortController();
         abortControllersRef.current.push(controller);
-
-        axios.get("http://localhost:7070/get-services", {
+        // const API_BASE = 'http://192.168.1.239:7070';
+        axios.get(`${API_BASE}/get-services`, {
             timeout: 10000,
             signal: controller.signal
         })
