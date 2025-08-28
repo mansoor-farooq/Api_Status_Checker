@@ -734,6 +734,7 @@
 
 
 
+
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useDebounce } from 'use-debounce';
 import Layout from '../component/Layout';
@@ -767,7 +768,7 @@ const YoungbazerFrontend = () => {
   const [detail, setDetail] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false); // Collapsible filters for mobile
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: null }); // New state for sorting
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: null }); // State for sorting
   const itemsPerPage = 8;
   const navigate = useNavigate();
   const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://192.168.1.239:7070';
@@ -1046,7 +1047,7 @@ ${detail.request_payload ? JSON.stringify(detail.request_payload, null, 2) : 'No
         <div className="sticky top-0 bg-white z-10 py-3 sm:shadow-md">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">API Services Dashboard</h1>
+              <h1 className="text-lg sm:text-2xl font-bold text-gray-900 whitespace-nowrap">API Services Dashboard</h1>
               <p className="text-gray-600 text-xs sm:text-sm mt-1">Monitor your API endpoints</p>
             </div>
             <div className="flex gap-2">
@@ -1098,24 +1099,24 @@ ${detail.request_payload ? JSON.stringify(detail.request_payload, null, 2) : 'No
         </div>
 
         {/* Filters Section */}
-        <div className="bg-white p-3 sm:p-4 rounded-lg shadow-sm border border-gray-200 mb-4">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base sm:text-lg font-semibold text-gray-900">API Services</h2>
+        <div className="bg-white p-2 sm:p-3 rounded-lg shadow-sm border border-gray-200 mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-sm sm:text-base font-semibold text-gray-900">API Services</h2>
             <button
               onClick={() => setIsFilterOpen(!isFilterOpen)}
-              className="text-indigo-600 hover:text-indigo-800 text-xs sm:text-sm font-medium flex items-center gap-1 sm:hidden"
+              className="text-indigo-600 hover:text-indigo-800 text-xs font-medium flex items-center gap-1 sm:hidden"
               aria-label={isFilterOpen ? 'Hide filters' : 'Show filters'}
             >
-              <IoSearch size={16} />
+              <IoSearch size={14} />
               {isFilterOpen ? 'Hide Filters' : 'Show Filters'}
             </button>
           </div>
-          <div className="relative mb-3">
-            <IoSearch className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+          <div className="relative mb-2">
+            <IoSearch className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" size={14} />
             <input
               type="text"
               placeholder="Search by name, method, status..."
-              className="pl-8 pr-8 py-2 text-xs sm:text-sm border text-black font-semibold border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 w-full"
+              className="pl-7 pr-7 py-1.5 text-xs border text-black font-semibold border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 w-full"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               aria-label="Search APIs"
@@ -1126,37 +1127,37 @@ ${detail.request_payload ? JSON.stringify(detail.request_payload, null, 2) : 'No
                 className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 aria-label="Clear search"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             )}
           </div>
-          <div className={`${isFilterOpen ? 'block' : 'hidden'} sm:block grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3`}>
+          <div className={`${isFilterOpen ? 'flex' : 'hidden'} sm:flex flex-row gap-1 sm:gap-2 flex-wrap`}>
             {[
-              { label: 'S.No Filter', value: serialNumberFilter, setValue: setSerialNumberFilter, placeholder: 'Filter by S.No' },
-              { label: 'Method Filter', value: methodSearch, setValue: setMethodSearch, placeholder: 'Filter by method' },
-              { label: 'Status Filter', value: statusSearch, setValue: setStatusSearch, placeholder: 'Filter by status' },
-              { label: 'Error Filter', value: errorSearch, setValue: setErrorSearch, placeholder: 'Filter by error' },
+              { label: 'S.No', value: serialNumberFilter, setValue: setSerialNumberFilter, placeholder: 'S.No' },
+              { label: 'Method', value: methodSearch, setValue: setMethodSearch, placeholder: 'Method' },
+              { label: 'Status', value: statusSearch, setValue: setStatusSearch, placeholder: 'Status' },
+              { label: 'Error', value: errorSearch, setValue: setErrorSearch, placeholder: 'Error' },
             ].map((filter, index) => (
-              <div key={index}>
-                <label className="block text-xs font-medium text-gray-700 mb-1">{filter.label}</label>
+              <div key={index} className="flex-1 min-w-0">
+                <label className="block text-xs font-medium text-gray-700 mb-0.5">{filter.label}</label>
                 <div className="relative">
                   <input
                     type="text"
                     placeholder={filter.placeholder}
-                    className="w-full px-2 py-1.5 text-xs sm:text-sm border text-black font-semibold border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-1.5 py-1 text-xs border text-black font-semibold border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
                     value={filter.value}
                     onChange={(e) => filter.setValue(e.target.value)}
-                    aria-label={filter.label}
+                    aria-label={`Filter by ${filter.label}`}
                   />
                   {filter.value && (
                     <button
                       onClick={() => filter.setValue('')}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      aria-label={`Clear ${filter.label}`}
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      aria-label={`Clear ${filter.label} filter`}
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </button>
@@ -1579,4 +1580,5 @@ ${detail.request_payload ? JSON.stringify(detail.request_payload, null, 2) : 'No
   );
 };
 
-export default YoungbazerFrontend; 
+export default YoungbazerFrontend;
+
