@@ -3,7 +3,7 @@ import NotFoundPage from '../pages/NotFoundPage'
 import Home from '../pages/Home'
 import Login from '../pages/Login'
 // import Signup from '../pages/Signup'
-import StatusGrid from '../pages/StatusGrid'
+
 import { Fragment } from 'react'
 import PrivateRoutes from './Private_route'; // adjust the path if needed
 import YoungBazerHealth from '../pages/YoungBazerHealth'
@@ -19,7 +19,7 @@ const Addroute = () => {
 
                     {""}
                     <Route path='/' element={<Home />} />
-                    <Route path='/sapservices' element={<StatusGrid />} />
+
                     <Route path='/youngBazer' element={<YoungBazerHealth />} />
 
                     <Route path='/fruntend_youngbazer' element={<Youngbazerfruntend />} />
