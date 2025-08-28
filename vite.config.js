@@ -52,6 +52,7 @@ export default defineConfig({
         secure: false, // set to true if remote has valid cert and you want strict verification
         rewrite: (path) => path.replace(/^\/yplrmapp/, '/yplrmapp'),
       },
+
     },
   },
   build: {
@@ -78,4 +79,5 @@ export default defineConfig({
       },
     },
   },
+
 });

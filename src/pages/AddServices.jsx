@@ -423,6 +423,7 @@ const AddServices = () => {
     const [status, setStatus] = useState(true);
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
+    const [sorce_name, setsorce_name] = useState('');
     const [apiUrl, setApiUrl] = useState('');
     const [apikey, setapikey] = useState('');
     const [rqpayload, setrqpayload] = useState('');
@@ -480,8 +481,19 @@ const AddServices = () => {
             api_key: apikey,
             method: method,
             request_payload: parsedPayload,
-            auth: auth
+            auth: auth,
+            sorce_name: sorce_name
         };
+
+        if (!sorce_name) {
+            Swal.fire({
+                icon: 'error',
+                title: 'error',
+                text: 'sorce name is recuired ',
+            });
+            return;
+        }
+
         if (parsedAuth) {
             payload.auth = parsedAuth;
         }
@@ -593,6 +605,21 @@ const AddServices = () => {
                                 onChange={(e) => setName(e.target.value)}
                                 className="w-full px-4 py-3 bg-gray-50 border text-black font-semibold border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
                                 aria-label="Service Name"
+                            />
+                        </div>
+
+                        <div className="space-y-1">
+                            <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                                <FaCog className="text-indigo-600" />
+                                Sorce Name *
+                            </label>
+                            <input
+                                type="text"
+                                placeholder="Enter Sorce Name "
+                                value={sorce_name}
+                                onChange={(e) => setsorce_name(e.target.value)}
+                                className="w-full px-4 py-3 bg-gray-50 border text-black font-semibold border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                                aria-label="Sorce Name "
                             />
                         </div>
 

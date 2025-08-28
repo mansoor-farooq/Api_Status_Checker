@@ -1,11 +1,14 @@
+
 // import React, { useEffect, useState, useMemo, useCallback } from 'react';
 // import { useDebounce } from 'use-debounce';
 // import Layout from '../component/Layout';
 // import axios from 'axios';
 // import axiosRetry from 'axios-retry';
-// import { IoRefresh, IoSearch } from 'react-icons/io5';
+// import { IoRefresh, IoSearch, IoBarChart } from 'react-icons/io5';
 // import { useNavigate } from 'react-router-dom';
 // import Swal from 'sweetalert2';
+// import { proxyRequest } from '../component/proxy';
+// import { Clipboard, X } from 'lucide-react';
 
 // // Configure axios retry for failed requests
 // axiosRetry(axios, { retries: 3, retryDelay: (retryCount) => retryCount * 1000 });
@@ -14,14 +17,25 @@
 //   const [loading, setLoading] = useState(true);
 //   const [services, setServices] = useState([]);
 //   const [globalServicesData, setGlobalServicesData] = useState([]);
-//   const [searchQuery, setSearchQuery] = useState('');
-//   const [debouncedSearchQuery] = useDebounce(searchQuery, 300);
+//   const [search, setSearch] = useState('');
+//   const [debouncedSearch] = useDebounce(search, 300);
+//   const [methodSearch, setMethodSearch] = useState('');
+//   const [debouncedMethodSearch] = useDebounce(methodSearch, 300);
+//   const [serialNumberFilter, setSerialNumberFilter] = useState('');
+//   const [debouncedSerialNumberFilter] = useDebounce(serialNumberFilter, 300);
+//   const [statusSearch, setStatusSearch] = useState('');
+//   const [debouncedStatusSearch] = useDebounce(statusSearch, 300);
+//   const [errorSearch, setErrorSearch] = useState('');
+//   const [debouncedErrorSearch] = useDebounce(errorSearch, 300);
 //   const [currentPage, setCurrentPage] = useState(1);
 //   const [refreshCount, setRefreshCount] = useState(0);
-
+//   const [detail, setDetail] = useState(null);
+//   const [isOpen, setIsOpen] = useState(false);
+//   const [isFilterOpen, setIsFilterOpen] = useState(false); // Collapsible filters for mobile
 //   const itemsPerPage = 8;
 //   const navigate = useNavigate();
 //   const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://192.168.1.239:7070';
+//   console.log("services", services);
 
 //   // Calculate API stats
 //   const apiStats = useMemo(() => {
@@ -31,6 +45,7 @@
 //       (count, api) => (api.status_code >= 400 || api.status_code === 'ERROR' || api.status_code === 'UNSUPPORTED' ? count + 1 : count),
 //       0
 //     );
+//     const dataAdditionCount = globalServicesData.length;
 
 //     return {
 //       totalApis,
@@ -39,163 +54,105 @@
 //       refreshCount,
 //       successRate: totalApis > 0 ? Math.round((workingApis / totalApis) * 100) : 0,
 //       avgResponseTime: totalApis > 0 ? Math.round(globalServicesData.reduce((sum, api) => sum + (api.duration_ms || 0), 0) / totalApis) : 0,
+//       dataAdditionCount,
 //     };
 //   }, [globalServicesData, refreshCount]);
 
-//   // Fetch services from API
+//   // Filter data
+//   const filtered = useMemo(() => {
+//     return globalServicesData.filter((service) => {
+//       const searchLower = debouncedSearch.toLowerCase();
+//       const methodSearchLower = debouncedMethodSearch.toLowerCase();
+//       const serialNumberLower = debouncedSerialNumberFilter.toLowerCase();
+//       const statusSearchLower = debouncedStatusSearch.toLowerCase();
+//       const errorSearchLower = debouncedErrorSearch.toLowerCase();
+
+//       const matchesSearch =
+//         !searchLower ||
+//         (service.services_name?.toLowerCase().includes(searchLower) ||
+//           (service.request_payload && JSON.stringify(service.request_payload).toLowerCase().includes(searchLower)));
+//       const matchesMethod = !methodSearchLower || service.method?.toLowerCase().includes(methodSearchLower);
+//       const matchesSerial = !serialNumberLower || String(service.globalIndex).includes(serialNumberLower);
+//       const matchesStatus = !statusSearchLower || String(service.status_code).includes(statusSearchLower);
+//       const matchesError = !errorSearchLower || (service.error?.toLowerCase().includes(errorSearchLower));
+
+//       return matchesSearch && matchesMethod && matchesSerial && matchesStatus && matchesError;
+//     });
+//   }, [
+//     globalServicesData,
+//     debouncedSearch,
+//     debouncedMethodSearch,
+//     debouncedSerialNumberFilter,
+//     debouncedStatusSearch,
+//     debouncedErrorSearch,
+//   ]);
+
+//   // Fetch data
 //   const fetchData = async () => {
 //     setLoading(true);
 //     try {
-//       const response = await axios.get(`${API_BASE}/get-services`, {
-//         timeout: 10000,
-//         signal: AbortSignal.timeout(10000),
-//         auth: {
-//           username: 'your-username', // Replace with actual API username
-//           password: 'your-password', // Replace with actual API password
-//         },
-//       });
-//       console.log('Fetched services:', response.data.data);
-//       setServices(response.data.data);
+//       const response = await axios.get(`${API_BASE}/get-services`);
+//       setServices(response.data.data || []);
 //       setRefreshCount((prev) => prev + 1);
 //     } catch (error) {
-//       if (!axios.isCancel(error)) {
-//         console.error('Fetch error:', error);
-//         Swal.fire({
-//           title: 'Error!',
-//           text: error.response?.data?.message || 'Failed to fetch services data',
-//           icon: 'error',
-//           confirmButtonText: 'OK',
-//         });
-//       }
+//       Swal.fire('Error!', error.message || 'Failed to fetch services', 'error');
 //     } finally {
 //       setLoading(false);
 //     }
 //   };
 
-//   // Map and check API statuses
+//   // Map data
 //   const mapData = async () => {
 //     if (services.length === 0) return;
-
 //     setLoading(true);
 //     try {
 //       const results = await Promise.allSettled(
 //         services.map(async (service, index) => {
-//           const method = service.method?.toUpperCase();
-//           let url = service.api_url;
-
-//           if (url.includes('192.168.16.27:8000')) {
-//             url = url.replace('http://192.168.16.27:8000', '/sap');
-//           }
-
-//           const auth = service.auth || {};
-//           const payload = service.request_payload || {};
-//           const serviceName = service.services_name || service.name || url;
-
-//           const config = {
-//             ...(auth.username && auth.password ? { auth: { username: auth.username, password: auth.password } } : {}),
-//             timeout: 30000,
-//             validateStatus: () => true,
-//           };
+//           const { method, api_url, auth, request_payload } = service;
 //           const started = Date.now();
-
-//           console.log(`Request for ${serviceName}: URL=${url}, Method=${method}, Auth=${JSON.stringify(config.auth)}`);
-
 //           try {
-//             let response;
-//             if (['GET', 'DELETE'].includes(method)) {
-//               response = await axios[method.toLowerCase()](url, config);
-//             } else if (['POST', 'PUT', 'PATCH'].includes(method)) {
-//               response = await axios[method.toLowerCase()](url, payload, config);
-//             } else {
-//               return {
-//                 services_name: serviceName,
-//                 description: service.description || '-',
-//                 request_payload: payload,
-//                 auth: config,
-//                 method,
-//                 api_url: url,
-//                 status_code: 'UNSUPPORTED',
-//                 error: 'Unsupported method',
-//                 duration_ms: 0,
-//                 globalIndex: index + 1,
-//                 response_data: response?.data || {},
-//               };
-//             }
-
-//             return {
-//               services_name: serviceName,
-//               description: service.description || '-',
-//               request_payload: payload,
-//               auth: config,
+//             const res = await proxyRequest({
+//               url: api_url,
 //               method,
-//               api_url: url,
-//               status_code: response.status,
-//               error: response.status >= 400 ? (response.data?.message || response.statusText) : null,
-//               duration_ms: Date.now() - started,
+//               payload: request_payload,
+//               auth,
+//             });
+//             return {
 //               globalIndex: index + 1,
-//               response_data: response.data || {},
+//               services_name: service.services_name || api_url,
+//               source_name: service.source_name,
+//               method,
+//               auth,
+//               api_url,
+//               request_payload,
+//               status_code: 200,
+//               error: null,
+//               duration_ms: Date.now() - started,
+//               response_data: res.data,
 //             };
-//           } catch (error) {
-//             console.error(`Error for ${serviceName}:`, error);
-//             if (error.code === 'ECONNABORTED') {
-//               Swal.fire({
-//                 title: 'Timeout Error!',
-//                 text: 'Request timed out. Retry?',
-//                 icon: 'warning',
-//                 showCancelButton: true,
-//                 confirmButtonText: 'Retry',
-//                 cancelButtonText: 'Cancel',
-//               }).then((result) => {
-//                 if (result.isConfirmed) mapData();
-//               });
-//             }
+//           } catch (err) {
 //             return {
-//               services_name: serviceName,
-//               description: service.description || '-',
-//               request_payload: payload,
-//               auth: config,
-//               method,
-//               api_url: url,
-//               status_code: error.response?.status || 'ERROR',
-//               error: getErrorMessage(error),
-//               duration_ms: Date.now() - started,
 //               globalIndex: index + 1,
+//               services_name: service.services_name || api_url,
+//               source_name: service.source_name,
+//               method,
+//               auth,
+//               api_url,
+//               request_payload,
+//               status_code: 'ERROR',
+//               error: err.message,
+//               duration_ms: Date.now() - started,
 //             };
 //           }
 //         })
 //       );
-
-//       const successfulResults = results
-//         .filter((result) => result.status === 'fulfilled')
-//         .map((result) => result.value);
-
-//       setGlobalServicesData(successfulResults);
-
-//       if (results.some((result) => result.status === 'rejected')) {
-//         Swal.fire({
-//           title: 'Partial Success',
-//           text: 'Some API checks failed but others succeeded',
-//           icon: 'warning',
-//           confirmButtonText: 'OK',
-//         });
-//       }
-//     } catch (error) {
-//       console.error('Map data error:', error);
-//       Swal.fire({
-//         title: 'Error!',
-//         text: 'Failed to check API statuses',
-//         icon: 'error',
-//         confirmButtonText: 'OK',
-//       });
+//       const final = results.map((r) => (r.status === 'fulfilled' ? r.value : r.reason));
+//       setGlobalServicesData(final);
+//     } catch (err) {
+//       console.error('❌ MapData Failed:', err.message);
 //     } finally {
 //       setLoading(false);
 //     }
-//   };
-
-//   const getErrorMessage = (error) => {
-//     if (error.code === 'ECONNABORTED') return 'Request timed out. Check server or retry.';
-//     if (error.response) return error.response.data?.message || error.response.statusText || 'Server error';
-//     return error.message || 'Network error';
 //   };
 
 //   useEffect(() => {
@@ -206,41 +163,13 @@
 //     if (services.length > 0) mapData();
 //   }, [services]);
 
-//   // Enhanced search function with fuzzy matching
-//   const enhancedSearch = useMemo(() => {
-//     if (!debouncedSearchQuery) return globalServicesData;
-
-//     const query = debouncedSearchQuery.toLowerCase();
-//     return globalServicesData.filter((service) => {
-//       const fieldsToSearch = [
-//         service.services_name || '',
-//         service.method || '',
-//         String(service.status_code) || '',
-//         service.error || '',
-//         String(service.globalIndex) || '',
-//       ].join(' ').toLowerCase();
-
-//       // Fuzzy matching: check if query is contained in any field
-//       return fieldsToSearch.includes(query) ||
-//         (service.request_payload && JSON.stringify(service.request_payload).toLowerCase().includes(query));
-//     }).sort((a, b) => {
-//       // Sort by relevance (services with exact matches first)
-//       const aMatch = fieldsToSearch(a).includes(query);
-//       const bMatch = fieldsToSearch(b).includes(query);
-//       return aMatch === bMatch ? 0 : aMatch ? -1 : 1;
-//     });
-//   }, [globalServicesData, debouncedSearchQuery]);
-
-//   const fieldsToSearch = (service) => [
-//     service.services_name || '',
-//     service.method || '',
-//     String(service.status_code) || '',
-//     service.error || '',
-//     String(service.globalIndex) || '',
-//   ].join(' ').toLowerCase();
-
-//   const clearSearch = () => {
-//     setSearchQuery('');
+//   const clearAllFilters = () => {
+//     setSearch('');
+//     setMethodSearch('');
+//     setSerialNumberFilter('');
+//     setStatusSearch('');
+//     setErrorSearch('');
+//     setIsFilterOpen(false);
 //   };
 
 //   const statusDot = useCallback((code) => {
@@ -259,163 +188,277 @@
 
 //   const indexOfLastItem = currentPage * itemsPerPage;
 //   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-//   const currentItems = enhancedSearch.slice(indexOfFirstItem, indexOfLastItem);
-//   const totalPages = Math.ceil(enhancedSearch.length / itemsPerPage);
+//   const currentItems = filtered.slice(indexOfFirstItem, indexOfLastItem);
+//   const totalPages = Math.ceil(filtered.length / itemsPerPage);
 
-//   useEffect(() => {
-//     console.log('Current items:', currentItems);
-//   }, [currentItems]);
+//   console.log("currentItems", currentItems);
+
+//   // Function to format detail object for copying in plain text
+//   const formatDetailForCopy = (detail) => {
+//     if (!detail) return 'No data available';
+//     try {
+//       return `
+// Basic Information
+// Service Name
+// ${detail.services_name ?? '—'}
+// Source Name
+// ${detail.source_name ?? '—'}
+// auth
+// ${detail.auth ? JSON.stringify(detail.auth, null, 2) : 'No auth data'}
+// HTTP Method
+// ${detail.method ?? '—'}
+// Serial Number
+// ${detail.globalIndex ?? '—'}
+// Status & Performance
+// Status Code
+// ${detail.status_code ?? '—'}
+// Response Time
+// ${detail.duration_ms != null ? `${detail.duration_ms}ms` : '—'}
+// Error Message
+// ${detail.error ?? 'No errors detected'}
+// API Endpoint
+// ${detail.api_url ?? '—'}
+// Request Payload
+// ${detail.request_payload ? JSON.stringify(detail.request_payload, null, 2) : 'No payload data'}
+// `.trim();
+//     } catch (err) {
+//       console.error('Error formatting data for copy:', err);
+//       return 'Error formatting data';
+//     }
+//   };
+
+//   // Fallback clipboard copy function
+//   const fallbackCopyText = (text) => {
+//     const textarea = document.createElement('textarea');
+//     textarea.value = text;
+//     textarea.style.position = 'fixed';
+//     textarea.style.opacity = '0';
+//     document.body.appendChild(textarea);
+//     textarea.focus();
+//     textarea.select();
+//     try {
+//       document.execCommand('copy');
+//       return true;
+//     } catch (err) {
+//       console.error('Fallback copy failed:', err);
+//       return false;
+//     } finally {
+//       document.body.removeChild(textarea);
+//     }
+//   };
 
 //   return (
 //     <Layout>
 //       {loading && (
 //         <div className="fixed inset-0 bg-gray-900 bg-opacity-70 flex items-center justify-center z-50 backdrop-blur-sm">
-//           <div className="bg-white p-6 rounded-xl shadow-2xl text-center max-w-sm mx-4 border border-gray-200">
-//             <div className="loader mx-auto mb-4"></div>
-//             <p className="text-gray-900 font-semibold text-lg mb-1">Checking services status...</p>
-//             <p className="text-gray-600 text-sm">Please wait while we verify all endpoints</p>
+//           <div className="bg-white p-4 rounded-xl shadow-2xl text-center max-w-xs mx-2 border border-gray-200">
+//             <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-indigo-600 mx-auto mb-3"></div>
+//             <p className="text-gray-900 font-semibold text-base">Checking services...</p>
+//             <p className="text-gray-600 text-xs">Please wait</p>
 //           </div>
 //         </div>
 //       )}
-
-//       <div className="container mx-auto px-4 py-6 mt-6">
-//         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
-//           <div>
-//             <h1 className="text-3xl font-bold text-gray-900">API Services Dashboard</h1>
-//             <p className="text-gray-600 mt-2">Monitor and manage all your API endpoints</p>
-//           </div>
-//           <div className="flex gap-3 mt-4 md:mt-0">
-//             <button
-//               onClick={mapData}
-//               disabled={loading}
-//               className="flex items-center px-4 py-2.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50 shadow-sm"
-//             >
-//               <IoRefresh className="mr-2" size={16} />
-//               {loading ? 'Refreshing...' : 'Refresh Status'}
-//             </button>
-//             <button
-//               onClick={() => navigate('/add_service')}
-//               disabled={loading}
-//               className="px-4 py-2.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors disabled:opacity-50 shadow-sm"
-//             >
-//               Add New Service
-//             </button>
-//           </div>
-//         </div>
-
-//         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5 mb-8">
-//           {/* Stats cards can be added here */}
-//         </div>
-
-//         <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200 mb-6">
-//           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-//             <h2 className="text-lg font-semibold text-gray-900">API Services</h2>
+//       <div className="container mx-auto px-2 sm:px-4 py-4">
+//         {/* Sticky Header */}
+//         <div className="sticky top-0 bg-white z-10 py-3 sm:shadow-md">
+//           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+//             <div>
+//               <h1 className="text-xl sm:text-2xl font-bold text-gray-900">API Services Dashboard</h1>
+//               <p className="text-gray-600 text-xs sm:text-sm mt-1">Monitor your API endpoints</p>
+//             </div>
 //             <div className="flex gap-2">
-//               <div className="relative w-full md:w-80">
-//                 <IoSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-//                 <input
-//                   type="text"
-//                   placeholder="Search by name, method, status, error, or serial..."
-//                   className="pl-10 pr-10 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-full"
-//                   value={searchQuery}
-//                   onChange={(e) => setSearchQuery(e.target.value)}
-//                 />
-//                 {searchQuery && (
-//                   <button
-//                     onClick={clearSearch}
-//                     className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-//                   >
-//                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-//                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-//                     </svg>
-//                   </button>
-//                 )}
-//               </div>
+//               <button
+//                 onClick={fetchData}
+//                 disabled={loading}
+//                 className="flex items-center px-3 py-2 text-xs sm:text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg disabled:opacity-50 shadow-sm touch-manipulation"
+//                 aria-label="Refresh API status"
+//               >
+//                 <IoRefresh className="mr-1 sm:mr-2" size={14} />
+//                 {loading ? 'Refreshing...' : 'Refresh'}
+//               </button>
+//               <button
+//                 onClick={() => navigate('/add_sevice')}
+//                 disabled={loading}
+//                 className="px-3 py-2 text-xs sm:text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg disabled:opacity-50 shadow-sm touch-manipulation"
+//                 aria-label="Add new service"
+//               >
+//                 Add Service
+//               </button>
 //             </div>
 //           </div>
 //         </div>
 
-//         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-//           <div className="overflow-x-auto">
-//             <table className="min-w-full divide-y divide-gray-200">
-//               <thead className="bg-gray-50">
+//         {/* Stats Cards */}
+//         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4 my-4">
+//           {[
+//             { label: 'Total APIs', value: apiStats.totalApis, icon: IoBarChart, color: 'blue' },
+//             { label: 'Working APIs', value: `${apiStats.workingApis} (${apiStats.successRate}%)`, icon: IoBarChart, color: 'green' },
+//             { label: 'Error APIs', value: apiStats.errorApis, icon: IoBarChart, color: 'red' },
+//             { label: 'Refresh Count', value: apiStats.refreshCount, icon: IoRefresh, color: 'purple' },
+//             { label: 'Data Added', value: apiStats.dataAdditionCount, icon: IoBarChart, color: 'cyan' },
+//           ].map((stat, index) => (
+//             <div
+//               key={index}
+//               className={`bg-gradient-to-r from-${stat.color}-50 to-${stat.color}-100 p-3 sm:p-4 rounded-lg shadow-sm border border-${stat.color}-100 transition-transform hover:scale-105`}
+//             >
+//               <div className="flex items-center">
+//                 <div className={`p-2 bg-${stat.color}-100 rounded-md`}>
+//                   <stat.icon className={`text-${stat.color}-600`} size={16} />
+//                 </div>
+//                 <div className="ml-2 sm:ml-3">
+//                   <h3 className="text-xs font-medium text-gray-500">{stat.label}</h3>
+//                   <p className={`mt-1 text-base sm:text-lg font-bold text-${stat.color}-700`}>{stat.value}</p>
+//                 </div>
+//               </div>
+//             </div>
+//           ))}
+//         </div>
+
+//         {/* Filters Section */}
+//         <div className="bg-white p-3 sm:p-4 rounded-lg shadow-sm border border-gray-200 mb-4">
+//           <div className="flex items-center justify-between mb-3">
+//             <h2 className="text-base sm:text-lg font-semibold text-gray-900">API Services</h2>
+//             <button
+//               onClick={() => setIsFilterOpen(!isFilterOpen)}
+//               className="text-indigo-600 hover:text-indigo-800 text-xs sm:text-sm font-medium flex items-center gap-1 sm:hidden"
+//               aria-label={isFilterOpen ? 'Hide filters' : 'Show filters'}
+//             >
+//               <IoSearch size={16} />
+//               {isFilterOpen ? 'Hide Filters' : 'Show Filters'}
+//             </button>
+//           </div>
+//           <div className="relative mb-3">
+//             <IoSearch className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+//             <input
+//               type="text"
+//               placeholder="Search by name, method, status..."
+//               className="pl-8 pr-8 py-2 text-xs sm:text-sm border text-black font-semibold border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 w-full"
+//               value={search}
+//               onChange={(e) => setSearch(e.target.value)}
+//               aria-label="Search APIs"
+//             />
+//             {search && (
+//               <button
+//                 onClick={clearAllFilters}
+//                 className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+//                 aria-label="Clear search"
+//               >
+//                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+//                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+//                 </svg>
+//               </button>
+//             )}
+//           </div>
+//           <div className={`${isFilterOpen ? 'block' : 'hidden'} sm:block grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3`}>
+//             {[
+//               { label: 'S.No Filter', value: serialNumberFilter, setValue: setSerialNumberFilter, placeholder: 'Filter by S.No' },
+//               { label: 'Method Filter', value: methodSearch, setValue: setMethodSearch, placeholder: 'Filter by method' },
+//               { label: 'Status Filter', value: statusSearch, setValue: setStatusSearch, placeholder: 'Filter by status' },
+//               { label: 'Error Filter', value: errorSearch, setValue: setErrorSearch, placeholder: 'Filter by error' },
+//             ].map((filter, index) => (
+//               <div key={index}>
+//                 <label className="block text-xs font-medium text-gray-700 mb-1">{filter.label}</label>
+//                 <div className="relative">
+//                   <input
+//                     type="text"
+//                     placeholder={filter.placeholder}
+//                     className="w-full px-2 py-1.5 text-xs sm:text-sm border text-black font-semibold border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
+//                     value={filter.value}
+//                     onChange={(e) => filter.setValue(e.target.value)}
+//                     aria-label={filter.label}
+//                   />
+//                   {filter.value && (
+//                     <button
+//                       onClick={() => filter.setValue('')}
+//                       className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+//                       aria-label={`Clear ${filter.label}`}
+//                     >
+//                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+//                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+//                       </svg>
+//                     </button>
+//                   )}
+//                 </div>
+//               </div>
+//             ))}
+//           </div>
+//         </div>
+
+//         {/* Table */}
+//         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+//           <div className="overflow-x-auto snap-x">
+//             <table className="min-w-[700px] w-full divide-y divide-gray-200">
+//               <thead className="bg-gray-50 sticky top-0 z-10 shadow-sm">
 //                 <tr>
-//                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">S.No</th>
-//                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service</th>
-//                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payload</th>
-//                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
-//                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-//                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Error</th>
-//                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+//                   <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[60px]">
+//                     S.No
+//                   </th>
+//                   <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">
+//                     Service
+//                   </th>
+//                   <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[150px] hidden sm:table-cell">
+//                     Payload
+//                   </th>
+//                   <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[80px]">
+//                     Method
+//                   </th>
+//                   <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[80px]">
+//                     Status
+//                   </th>
+//                   <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px] hidden sm:table-cell">
+//                     Error
+//                   </th>
+//                   <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px]">
+//                     Actions
+//                   </th>
 //                 </tr>
 //               </thead>
 //               <tbody className="bg-white divide-y divide-gray-200">
 //                 {currentItems.map((item) => (
 //                   <tr key={item.globalIndex} className="hover:bg-gray-50 transition-colors">
-//                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-//                       {item.globalIndex}
-//                     </td>
-//                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+//                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium text-gray-900">{item.globalIndex}</td>
+//                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900 truncate max-w-[100px] sm:max-w-[150px]" title={item.services_name || '—'}>
 //                       {item.services_name || '—'}
 //                     </td>
-//                     <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate" title={item.request_payload ? JSON.stringify(item.request_payload) : '—'}>
-//                       {item.request_payload && Object.keys(item.request_payload).length > 0
-//                         ? `${JSON.stringify(item.request_payload).substring(0, 50)}...`
-//                         : '—'}
+//                     <td
+//                       className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900 truncate max-w-[120px] hidden sm:table-cell"
+//                       title={item.request_payload ? JSON.stringify(item.request_payload) : '—'}
+//                     >
+//                       {item.request_payload ? JSON.stringify(item.request_payload).substring(0, 20) + '...' : '—'}
 //                     </td>
-//                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-//                       <span className="px-2.5 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
-//                         {item.method}
-//                       </span>
+//                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900">
+//                       <span className="px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">{item.method}</span>
 //                     </td>
-//                     <td className="px-6 py-4 whitespace-nowrap text-sm">
+//                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">
 //                       <div className="flex items-center">
-//                         <span className={`w-3 h-3 rounded-full inline-block mr-2 ${statusDot(item.status_code)}`} />
-//                         <span className={`font-medium ${statusColor(item.status_code)}`}>
-//                           {item.status_code}
-//                         </span>
+//                         <span className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full inline-block mr-1 sm:mr-2 ${statusDot(item.status_code)}`} />
+//                         <span className={`font-medium ${statusColor(item.status_code)}`}>{item.status_code}</span>
 //                       </div>
 //                     </td>
-//                     <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate" title={item.error || ''}>
+//                     <td
+//                       className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900 truncate max-w-[100px] hidden sm:table-cell"
+//                       title={item.error || ''}
+//                     >
 //                       {item.error || '—'}
 //                     </td>
-//                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+//                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">
 //                       <button
-//                         className="text-indigo-600 hover:text-indigo-900 transition-colors font-semibold"
 //                         onClick={() => {
-//                           Swal.fire({
-//                             title: `<strong>${item.services_name || 'Service'}</strong>`,
-//                             html: `
-//                               <div style="text-align:left; font-size:14px; line-height:1.6;">
-//                                 <p><strong>Method:</strong> ${item.method}</p>
-//                                 <p><strong>Status:</strong> <span style="color: ${item.status_code === 200 ? '#16a34a' : '#dc2626'};">${item.status_code}</span></p>
-//                                 ${item.error ? `<p><strong>Error:</strong> ${item.error}</p>` : ''}
-//                                 <p><strong>API URL:</strong></p>
-//                                 <div style="word-break: break-word; background-color:#f3f4f6; padding:8px; border-radius:6px;">
-//                                   <a href="${item.api_url}" target="_blank" class="text-blue-600 hover:underline">${item.api_url}</a>
-//                                 </div>
-//                                 ${item.duration_ms ? `<p><strong>Response Time:</strong> ${item.duration_ms}ms</p>` : ''}
-//                               </div>
-//                             `,
-//                             showCloseButton: true,
-//                             showConfirmButton: false,
-//                             icon: item.status_code === 200 ? 'success' : 'error',
-//                             customClass: {
-//                               popup: 'rounded-xl shadow-xl p-6',
-//                               title: 'text-xl font-bold text-gray-900',
-//                             },
-//                           });
+//                           setIsOpen(true);
+//                           setDetail(item);
 //                         }}
+//                         className="px-3 py-1.5 text-xs sm:text-sm bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700 transition-colors touch-manipulation"
+//                         aria-label="View API details"
 //                       >
-//                         View Details
+//                         Details
 //                       </button>
 //                     </td>
 //                   </tr>
 //                 ))}
 //                 {currentItems.length === 0 && (
 //                   <tr>
-//                     <td colSpan="7" className="px-6 py-4 text-center text-sm text-gray-500">
-//                       No services found matching the search.
+//                     <td colSpan="7" className="px-2 sm:px-4 py-3 text-center text-xs sm:text-sm text-gray-500">
+//                       No services found matching the filters.
 //                     </td>
 //                   </tr>
 //                 )}
@@ -423,28 +466,258 @@
 //             </table>
 //           </div>
 
-//           <div className="bg-white px-6 py-4 border-t border-gray-200">
-//             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-//               <div className="text-sm text-gray-700">
+//           {/* Modal */}
+//           {isOpen && (
+//             <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 px-2 sm:px-4 py-4">
+//               <div className="bg-white w-full max-w-3xl rounded-lg sm:shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+//                 {/* Header */}
+//                 <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-3 sm:p-4 text-white relative">
+//                   <div className="flex items-start justify-between">
+//                     <div>
+//                       <h2 className="text-base sm:text-lg font-bold flex items-center gap-1 sm:gap-2">
+//                         <IoBarChart className="text-white" size={16} />
+//                         API Service Details
+//                       </h2>
+//                       <p className="text-indigo-100 text-xs mt-1">API endpoint information</p>
+//                     </div>
+//                     <div
+//                       className={`px-2 py-0.5 rounded-full text-xs font-medium ${detail?.status_code === 200
+//                         ? 'bg-green-500/20 text-green-100'
+//                         : detail?.status_code >= 400 || detail?.status_code === 'ERROR' || detail?.status_code === 'UNSUPPORTED'
+//                           ? 'bg-red-500/20 text-red-100'
+//                           : 'bg-yellow-500/20 text-yellow-100'
+//                         }`}
+//                     >
+//                       {detail?.status_code === 200
+//                         ? 'Operational'
+//                         : detail?.status_code >= 400 || detail?.status_code === 'ERROR' || detail?.status_code === 'UNSUPPORTED'
+//                           ? 'Error'
+//                           : 'Warning'}
+//                     </div>
+//                   </div>
+//                   <button
+//                     onClick={() => setIsOpen(false)}
+//                     className="absolute top-3 right-3 text-white hover:text-indigo-200 p-1.5 rounded-full hover:bg-white/10"
+//                     aria-label="Close modal"
+//                   >
+//                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+//                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+//                     </svg>
+//                   </button>
+//                 </div>
+
+//                 {/* Body */}
+//                 <div className="flex-1 overflow-y-auto p-3 sm:p-4">
+//                   <div className="grid grid-cols-1 gap-3 sm:gap-4">
+//                     {/* Basic Info */}
+//                     <div className="bg-gray-50 p-3 sm:p-4 rounded-lg border border-gray-200">
+//                       <h3 className="text-sm sm:text-base font-semibold text-gray-800 mb-3 flex items-center gap-1">
+//                         <svg className="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+//                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+//                         </svg>
+//                         Basic Information
+//                       </h3>
+//                       <div className="space-y-2 text-xs sm:text-sm">
+//                         <div>
+//                           <span className="text-xs font-medium text-gray-500 block">Service Name</span>
+//                           <span className="font-medium text-gray-900">{detail?.services_name || '—'}</span>
+//                         </div>
+//                         <div>
+//                           <span className="text-xs font-medium text-gray-500 block">Source Name</span>
+//                           <span className="font-medium text-gray-900">{detail?.source_name || '—'}</span>
+//                         </div>
+//                         <div>
+//                           <span className="text-xs font-medium text-gray-500 block">auth </span>
+//                           <span className="font-medium text-gray-900">{detail?.auth ? JSON.stringify(detail.auth, null, 2) : 'No auth data'}</span>
+//                         </div>
+//                         <div>
+//                           <span className="text-xs font-medium text-gray-500 block">HTTP Method</span>
+//                           <span
+//                             className={`px-2 py-0.5 rounded-full text-xs font-medium ${detail?.method === 'GET'
+//                               ? 'bg-blue-100 text-blue-800'
+//                               : detail?.method === 'POST'
+//                                 ? 'bg-green-100 text-green-800'
+//                                 : detail?.method === 'PUT'
+//                                   ? 'bg-yellow-100 text-yellow-800'
+//                                   : detail?.method === 'DELETE'
+//                                     ? 'bg-red-100 text-red-800'
+//                                     : 'bg-gray-100 text-gray-800'
+//                               }`}
+//                           >
+//                             {detail?.method || '—'}
+//                           </span>
+//                         </div>
+//                         <div>
+//                           <span className="text-xs font-medium text-gray-500 block">Serial Number</span>
+//                           <span className="font-medium text-gray-900">{detail?.globalIndex || '—'}</span>
+//                         </div>
+//                       </div>
+//                     </div>
+
+//                     {/* Status & Performance */}
+//                     <div className="bg-gray-50 p-3 sm:p-4 rounded-lg border border-gray-200">
+//                       <h3 className="text-sm sm:text-base font-semibold text-gray-800 mb-3 flex items-center gap-1">
+//                         <svg className="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+//                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+//                         </svg>
+//                         Status & Performance
+//                       </h3>
+//                       <div className="space-y-2 text-xs sm:text-sm">
+//                         <div>
+//                           <span className="text-xs font-medium text-gray-500 block">Status Code</span>
+//                           <div className="flex items-center gap-2">
+//                             <span className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full inline-block ${statusDot(detail?.status_code)}`} />
+//                             <span className={`font-medium ${statusColor(detail?.status_code)}`}>{detail?.status_code || '—'}</span>
+//                           </div>
+//                         </div>
+//                         <div>
+//                           <span className="text-xs font-medium text-gray-500 block">Response Time</span>
+//                           <span className="font-medium text-gray-900">{detail?.duration_ms ? `${detail.duration_ms}ms` : '—'}</span>
+//                         </div>
+//                         <div>
+//                           <span className="text-xs font-medium text-gray-500 block">Error Message</span>
+//                           <span className="font-medium text-red-600 break-words">{detail?.error || 'No errors detected'}</span>
+//                         </div>
+//                       </div>
+//                     </div>
+
+//                     {/* API Endpoint */}
+//                     <div className="bg-gray-50 p-3 sm:p-4 rounded-lg border border-gray-200">
+//                       <h3 className="text-sm sm:text-base font-semibold text-gray-800 mb-3 flex items-center gap-1">
+//                         <svg className="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+//                           <path
+//                             strokeLinecap="round"
+//                             strokeLinejoin="round"
+//                             strokeWidth={2}
+//                             d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+//                           />
+//                         </svg>
+//                         API Endpoint
+//                       </h3>
+//                       <div className="bg-gray-100 p-2 rounded-md overflow-x-auto">
+//                         <code className="text-xs sm:text-sm text-gray-800 break-all">{detail?.api_url || '—'}</code>
+//                       </div>
+//                     </div>
+
+//                     {/* Request Payload */}
+//                     <div className="bg-gray-50 p-3 sm:p-4 rounded-lg border border-gray-200">
+//                       <h3 className="text-sm sm:text-base font-semibold text-gray-800 mb-3 flex items-center gap-1">
+//                         <svg className="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+//                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+//                         </svg>
+//                         Request Payload
+//                       </h3>
+//                       <div className="bg-gray-900 p-2 sm:p-3 rounded-md overflow-x-auto max-h-40 sm:max-h-48">
+//                         <pre className="text-xs text-green-400 overflow-x-auto">{detail?.request_payload ? JSON.stringify(detail.request_payload, null, 2) : 'No payload data'}</pre>
+//                       </div>
+//                     </div>
+//                   </div>
+//                 </div>
+
+//                 {/* Footer */}
+//                 <div className="bg-gray-50 px-3 sm:px-4 py-3 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-3">
+//                   <div className="text-xs text-gray-500 flex items-center">
+//                     <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+//                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+//                     </svg>
+//                     Last checked: {new Date().toLocaleString()}
+//                   </div>
+//                   <div className="flex gap-2">
+//                     <button
+//                       onClick={() => setIsOpen(false)}
+//                       className="px-3 py-1.5 text-xs sm:text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 shadow-sm touch-manipulation"
+//                       aria-label="Close modal"
+//                     >
+//                       Close
+//                     </button>
+//                     <button
+//                       onClick={async () => {
+//                         const textToCopy = formatDetailForCopy(detail);
+//                         try {
+//                           if (navigator.clipboard && navigator.clipboard.writeText) {
+//                             await navigator.clipboard.writeText(textToCopy);
+//                             Swal.fire({
+//                               icon: 'success',
+//                               title: 'Copied!',
+//                               text: 'Service details copied to clipboard',
+//                               timer: 1500,
+//                               showConfirmButton: false,
+//                               position: 'top-end',
+//                               toast: true,
+//                             });
+//                           } else {
+//                             const success = fallbackCopyText(textToCopy);
+//                             if (success) {
+//                               Swal.fire({
+//                                 icon: 'success',
+//                                 title: 'Copied!',
+//                                 text: 'Service details copied to clipboard (fallback method)',
+//                                 timer: 1500,
+//                                 showConfirmButton: false,
+//                                 position: 'top-end',
+//                                 toast: true,
+//                               });
+//                             } else {
+//                               throw new Error('Fallback copy failed');
+//                             }
+//                           }
+//                         } catch (err) {
+//                           console.error('Clipboard copy error:', err);
+//                           Swal.fire({
+//                             icon: 'error',
+//                             title: 'Failed to Copy',
+//                             text: 'Unable to access clipboard. Please ensure the site is running on HTTPS or localhost, check browser permissions, or copy manually.',
+//                             timer: 2000,
+//                             showConfirmButton: false,
+//                             position: 'top-end',
+//                             toast: true,
+//                           });
+//                         }
+//                       }}
+//                       className="px-3 py-1.5 text-xs sm:text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 shadow-sm flex items-center gap-1 touch-manipulation"
+//                       aria-label="Copy all API details"
+//                     >
+//                       <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+//                         <path
+//                           strokeLinecap="round"
+//                           strokeLinejoin="round"
+//                           strokeWidth={2}
+//                           d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+//                         />
+//                       </svg>
+//                       Copy All Details
+//                     </button>
+//                   </div>
+//                 </div>
+//               </div>
+//             </div>
+//           )}
+
+//           {/* Pagination */}
+//           <div className="bg-white px-2 sm:px-4 py-3 border-t border-gray-200">
+//             <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+//               <div className="text-xs sm:text-sm text-gray-700">
 //                 Showing <span className="font-medium">{indexOfFirstItem + 1}</span> to{' '}
-//                 <span className="font-medium">{Math.min(indexOfLastItem, enhancedSearch.length)}</span> of{' '}
-//                 <span className="font-medium">{enhancedSearch.length}</span> results
+//                 <span className="font-medium">{Math.min(indexOfLastItem, filtered.length)}</span> of{' '}
+//                 <span className="font-medium">{filtered.length}</span> results
 //               </div>
 //               <div className="flex items-center gap-2">
 //                 <button
-//                   className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+//                   className="px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
 //                   onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
 //                   disabled={currentPage === 1 || loading}
+//                   aria-label="Previous page"
 //                 >
 //                   Previous
 //                 </button>
-//                 <span className="px-3 py-1.5 text-sm text-gray-700">
+//                 <span className="px-2 sm:px-3 py-1 text-xs sm:text-sm text-gray-700">
 //                   Page {currentPage} of {totalPages}
 //                 </span>
 //                 <button
-//                   className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+//                   className="px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
 //                   onClick={() => setCurrentPage((prev) => (prev < totalPages ? prev + 1 : prev))}
 //                   disabled={currentPage === totalPages || loading}
+//                   aria-label="Next page"
 //                 >
 //                   Next
 //                 </button>
@@ -459,14 +732,18 @@
 
 // export default YoungbazerFrontend;
 
+
+
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useDebounce } from 'use-debounce';
 import Layout from '../component/Layout';
 import axios from 'axios';
 import axiosRetry from 'axios-retry';
-import { IoRefresh, IoSearch, IoBarChart } from 'react-icons/io5'; // Updated to use IoBarChart
+import { IoRefresh, IoSearch, IoBarChart } from 'react-icons/io5';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
+import { proxyRequest } from '../component/proxy';
+import { Clipboard, X } from 'lucide-react';
 
 // Configure axios retry for failed requests
 axiosRetry(axios, { retries: 3, retryDelay: (retryCount) => retryCount * 1000 });
@@ -487,12 +764,16 @@ const YoungbazerFrontend = () => {
   const [debouncedErrorSearch] = useDebounce(errorSearch, 300);
   const [currentPage, setCurrentPage] = useState(1);
   const [refreshCount, setRefreshCount] = useState(0);
-
+  const [detail, setDetail] = useState(null);
+  const [isOpen, setIsOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false); // Collapsible filters for mobile
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: null }); // New state for sorting
   const itemsPerPage = 8;
   const navigate = useNavigate();
   const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://192.168.1.239:7070';
+  console.log("services", services);
 
-  // Calculate API stats (added dataAdditionCount as a placeholder)
+  // Calculate API stats
   const apiStats = useMemo(() => {
     const totalApis = globalServicesData.length;
     const workingApis = globalServicesData.reduce((count, api) => (api.status_code === 200 ? count + 1 : count), 0);
@@ -500,7 +781,7 @@ const YoungbazerFrontend = () => {
       (count, api) => (api.status_code >= 400 || api.status_code === 'ERROR' || api.status_code === 'UNSUPPORTED' ? count + 1 : count),
       0
     );
-    const dataAdditionCount = globalServicesData.length; // Placeholder; replace with actual logic if needed
+    const dataAdditionCount = globalServicesData.length;
 
     return {
       totalApis,
@@ -513,211 +794,148 @@ const YoungbazerFrontend = () => {
     };
   }, [globalServicesData, refreshCount]);
 
-  // Fetch services from API
+  // Function to sort data
+  const sortData = (data, key, direction) => {
+    if (!key || !direction) return data;
+
+    return [...data].sort((a, b) => {
+      let aValue = a[key] ?? '';
+      let bValue = b[key] ?? '';
+
+      // Handle specific columns
+      if (key === 'request_payload') {
+        aValue = aValue ? JSON.stringify(aValue) : '';
+        bValue = bValue ? JSON.stringify(bValue) : '';
+      }
+      if (key === 'status_code') {
+        aValue = String(aValue);
+        bValue = String(bValue);
+      }
+      if (key === 'globalIndex') {
+        aValue = Number(aValue) || 0;
+        bValue = Number(bValue) || 0;
+      }
+
+      if (typeof aValue === 'string') aValue = aValue.toLowerCase();
+      if (typeof bValue === 'string') bValue = bValue.toLowerCase();
+
+      if (aValue < bValue) return direction === 'asc' ? -1 : 1;
+      if (aValue > bValue) return direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+  };
+
+  // Filter and sort data
+  const filtered = useMemo(() => {
+    let result = globalServicesData.filter((service) => {
+      const searchLower = debouncedSearch.toLowerCase();
+      const methodSearchLower = debouncedMethodSearch.toLowerCase();
+      const serialNumberLower = debouncedSerialNumberFilter.toLowerCase();
+      const statusSearchLower = debouncedStatusSearch.toLowerCase();
+      const errorSearchLower = debouncedErrorSearch.toLowerCase();
+
+      const matchesSearch =
+        !searchLower ||
+        (service.services_name?.toLowerCase().includes(searchLower) ||
+          (service.request_payload && JSON.stringify(service.request_payload).toLowerCase().includes(searchLower)));
+      const matchesMethod = !methodSearchLower || service.method?.toLowerCase().includes(methodSearchLower);
+      const matchesSerial = !serialNumberLower || String(service.globalIndex).includes(serialNumberLower);
+      const matchesStatus = !statusSearchLower || String(service.status_code).includes(statusSearchLower);
+      const matchesError = !errorSearchLower || (service.error?.toLowerCase().includes(errorSearchLower));
+
+      return matchesSearch && matchesMethod && matchesSerial && matchesStatus && matchesError;
+    });
+
+    return sortData(result, sortConfig.key, sortConfig.direction);
+  }, [
+    globalServicesData,
+    debouncedSearch,
+    debouncedMethodSearch,
+    debouncedSerialNumberFilter,
+    debouncedStatusSearch,
+    debouncedErrorSearch,
+    sortConfig,
+  ]);
+
+  // Handle sort click
+  const handleSort = (key) => {
+    setSortConfig((prev) => {
+      if (prev.key === key && prev.direction === 'asc') {
+        return { key, direction: 'desc' };
+      } else if (prev.key === key && prev.direction === 'desc') {
+        return { key: null, direction: null };
+      } else {
+        return { key, direction: 'asc' };
+      }
+    });
+  };
+
+  // Fetch data
   const fetchData = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${API_BASE}/get-services`, {
-        timeout: 10000,
-        signal: AbortSignal.timeout(10000),
-        auth: {
-          username: 'your-username', // Replace with actual API username
-          password: 'your-password', // Replace with actual API password
-        },
-      });
-      console.log('Fetched services:', response.data.data);
-      setServices(response.data.data);
+      const response = await axios.get(`${API_BASE}/get-services`);
+      setServices(response.data.data || []);
       setRefreshCount((prev) => prev + 1);
     } catch (error) {
-      if (!axios.isCancel(error)) {
-        console.error('Fetch error:', error);
-        Swal.fire({
-          title: 'Error!',
-          text: error.response?.data?.message || 'Failed to fetch services data',
-          icon: 'error',
-          confirmButtonText: 'OK',
-        });
-      }
+      Swal.fire('Error!', error.message || 'Failed to fetch services', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  // Map and check API statuses
+  // Map data
   const mapData = async () => {
     if (services.length === 0) return;
-
     setLoading(true);
     try {
       const results = await Promise.allSettled(
         services.map(async (service, index) => {
-          const method = service.method?.toUpperCase();
-          let url = service.api_url;
-
-          // In dev, rewrite certain external hosts to local proxy paths to avoid CORS
-          if (import.meta.env.DEV) {
-            try {
-              const parsed = new URL(url, window.location.origin);
-              // rewrite SAP internal IP to /sap proxy
-              if (parsed.host === '192.168.16.27:8000' || url.includes('192.168.16.27:8000')) {
-                url = url.replace('http://192.168.16.27:8000', '/sap');
-              }
-              // rewrite apps.youngsfood.com to /yplrmapp proxy
-              if (parsed.hostname === 'apps.youngsfood.com') {
-                // Normalize trailing path so we don't duplicate /yplrmapp
-                // e.g. original pathname may already contain /yplrmapp
-                const rawPath = parsed.pathname || '';
-                const normalizedTrailing = rawPath.replace(/^\/yplrmapp/, '');
-                const trailing = normalizedTrailing + (parsed.search || '');
-                url = '/yplrmapp' + (trailing || '');
-              }
-            } catch (e) {
-              // non-url strings or relative paths - leave as is
-            }
-            // debug log original and rewritten url for easier tracing
-            if (import.meta.env.DEV) console.log('mapData URL mapping:', { original: service.api_url, rewritten: url });
-          } else {
-            // In production keep original absolute URLs (no rewrite)
-          }
-
-          // service.auth may be stored as a JSON string in DB; normalize to object
-          let auth = service.auth || {};
-          if (typeof auth === 'string' && auth.trim()) {
-            try {
-              auth = JSON.parse(auth);
-            } catch (e) {
-              // leave as string if parse fails
-              console.warn('Failed to parse service.auth JSON string:', auth);
-              auth = {};
-            }
-          }
-          const payload = service.request_payload || {};
-          const serviceName = service.services_name || service.name || url;
-
-          const config = {
-            timeout: 30000,
-            validateStatus: () => true,
-            headers: {},
-          };
-
-          // If credentials present, prefer sending Authorization header (Basic) for browser proxy
-          if (auth && auth.username && auth.password) {
-            try {
-              const basic = typeof window !== 'undefined' ? window.btoa(`${auth.username}:${auth.password}`) : Buffer.from(`${auth.username}:${auth.password}`).toString('base64');
-              config.headers['Authorization'] = `Basic ${basic}`;
-            } catch (e) {
-              // fallback to axios auth option
-              config.auth = { username: auth.username, password: auth.password };
-            }
-          }
+          const { method, api_url, auth, request_payload } = service;
           const started = Date.now();
-
-          console.log(`Request for ${serviceName}: URL=${url}, Method=${method}, Auth=${JSON.stringify(auth)}`);
-
-          // Ensure URL is safe for axios; avoid double-encoding for already encoded paths
           try {
-            // only encode if the url is absolute and contains spaces
-            if (typeof url === 'string' && /\s/.test(url)) url = encodeURI(url);
-          } catch (e) {
-            // ignore
-          }
-
-          try {
-            let response;
-            if (['GET', 'DELETE'].includes(method)) {
-              response = await axios[method.toLowerCase()](url, config);
-            } else if (['POST', 'PUT', 'PATCH'].includes(method)) {
-              response = await axios[method.toLowerCase()](url, payload, config);
-            } else {
-              return {
-                services_name: serviceName,
-                description: service.description || '-',
-                request_payload: payload,
-                auth: config,
-                method,
-                api_url: url,
-                status_code: 'UNSUPPORTED',
-                error: 'Unsupported method',
-                duration_ms: 0,
-                globalIndex: index + 1,
-                response_data: response?.data || {},
-              };
-            }
-
-            return {
-              services_name: serviceName,
-              description: service.description || '-',
-              request_payload: payload,
-              auth: config,
+            const res = await proxyRequest({
+              url: api_url,
               method,
-              api_url: url,
-              status_code: response.status,
-              error: response.status >= 400 ? (response.data?.message || response.statusText) : null,
-              duration_ms: Date.now() - started,
+              payload: request_payload,
+              auth,
+            });
+            return {
               globalIndex: index + 1,
-              response_data: response.data || {},
+              services_name: service.services_name || api_url,
+              source_name: service.source_name,
+              method,
+              auth,
+              api_url,
+              request_payload,
+              status_code: 200,
+              error: null,
+              duration_ms: Date.now() - started,
+              response_data: res.data,
             };
-          } catch (error) {
-            console.error(`Error for ${serviceName}:`, error);
-            if (error.code === 'ECONNABORTED') {
-              Swal.fire({
-                title: 'Timeout Error!',
-                text: 'Request timed out. Retry?',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Retry',
-                cancelButtonText: 'Cancel',
-              }).then((result) => {
-                if (result.isConfirmed) mapData();
-              });
-            }
+          } catch (err) {
             return {
-              services_name: serviceName,
-              description: service.description || '-',
-              request_payload: payload,
-              auth: config,
-              method,
-              api_url: url,
-              status_code: error.response?.status || 'ERROR',
-              error: getErrorMessage(error),
-              duration_ms: Date.now() - started,
               globalIndex: index + 1,
+              services_name: service.services_name || api_url,
+              source_name: service.source_name,
+              method,
+              auth,
+              api_url,
+              request_payload,
+              status_code: 'ERROR',
+              error: err.message,
+              duration_ms: Date.now() - started,
             };
           }
         })
       );
-
-      const successfulResults = results
-        .filter((result) => result.status === 'fulfilled')
-        .map((result) => result.value);
-
-      setGlobalServicesData(successfulResults);
-
-      if (results.some((result) => result.status === 'rejected')) {
-        Swal.fire({
-          title: 'Partial Success',
-          text: 'Some API checks failed but others succeeded',
-          icon: 'warning',
-          confirmButtonText: 'OK',
-        });
-      }
-    } catch (error) {
-      console.error('Map data error:', error);
-      Swal.fire({
-        title: 'Error!',
-        text: 'Failed to check API statuses',
-        icon: 'error',
-        confirmButtonText: 'OK',
-      });
+      const final = results.map((r) => (r.status === 'fulfilled' ? r.value : r.reason));
+      setGlobalServicesData(final);
+    } catch (err) {
+      console.error('❌ MapData Failed:', err.message);
     } finally {
       setLoading(false);
     }
-  };
-
-  const getErrorMessage = (error) => {
-    if (error.code === 'ECONNABORTED') return 'Request timed out. Check server or retry.';
-    if (error.response) return error.response.data?.message || error.response.statusText || 'Server error';
-    return error.message || 'Network error';
   };
 
   useEffect(() => {
@@ -728,39 +946,13 @@ const YoungbazerFrontend = () => {
     if (services.length > 0) mapData();
   }, [services]);
 
-  // Enhanced filtering with better search logic
-  const filtered = useMemo(() => {
-    return globalServicesData.filter((service) => {
-      const searchLower = debouncedSearch.toLowerCase();
-      const methodSearchLower = debouncedMethodSearch.toLowerCase();
-      const serialNumberLower = debouncedSerialNumberFilter.toLowerCase();
-      const statusSearchLower = debouncedStatusSearch.toLowerCase();
-      const errorSearchLower = debouncedErrorSearch.toLowerCase();
-
-      const matchesSearch = !searchLower || (service.services_name?.toLowerCase().includes(searchLower) ||
-        (service.request_payload && JSON.stringify(service.request_payload).toLowerCase().includes(searchLower)));
-      const matchesMethod = !methodSearchLower || service.method?.toLowerCase().includes(methodSearchLower);
-      const matchesSerial = !serialNumberLower || String(service.globalIndex).includes(serialNumberLower);
-      const matchesStatus = !statusSearchLower || String(service.status_code).includes(statusSearchLower);
-      const matchesError = !errorSearchLower || (service.error?.toLowerCase().includes(errorSearchLower));
-
-      return matchesSearch && matchesMethod && matchesSerial && matchesStatus && matchesError;
-    });
-  }, [
-    globalServicesData,
-    debouncedSearch,
-    debouncedMethodSearch,
-    debouncedSerialNumberFilter,
-    debouncedStatusSearch,
-    debouncedErrorSearch,
-  ]);
-
   const clearAllFilters = () => {
     setSearch('');
     setMethodSearch('');
     setSerialNumberFilter('');
     setStatusSearch('');
     setErrorSearch('');
+    setIsFilterOpen(false);
   };
 
   const statusDot = useCallback((code) => {
@@ -782,310 +974,339 @@ const YoungbazerFrontend = () => {
   const currentItems = filtered.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
 
-  useEffect(() => {
-    console.log('Current items:', currentItems);
-  }, [currentItems]);
+  console.log("currentItems", currentItems);
+
+  // Function to format detail object for copying in plain text
+  const formatDetailForCopy = (detail) => {
+    if (!detail) return 'No data available';
+    try {
+      return `
+Basic Information
+Service Name
+${detail.services_name ?? '—'}
+Source Name
+${detail.source_name ?? '—'}
+auth
+${detail.auth ? JSON.stringify(detail.auth, null, 2) : 'No auth data'}
+HTTP Method
+${detail.method ?? '—'}
+Serial Number
+${detail.globalIndex ?? '—'}
+Status & Performance
+Status Code
+${detail.status_code ?? '—'}
+Response Time
+${detail.duration_ms != null ? `${detail.duration_ms}ms` : '—'}
+Error Message
+${detail.error ?? 'No errors detected'}
+API Endpoint
+${detail.api_url ?? '—'}
+Request Payload
+${detail.request_payload ? JSON.stringify(detail.request_payload, null, 2) : 'No payload data'}
+`.trim();
+    } catch (err) {
+      console.error('Error formatting data for copy:', err);
+      return 'Error formatting data';
+    }
+  };
+
+  // Fallback clipboard copy function
+  const fallbackCopyText = (text) => {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    try {
+      document.execCommand('copy');
+      return true;
+    } catch (err) {
+      console.error('Fallback copy failed:', err);
+      return false;
+    } finally {
+      document.body.removeChild(textarea);
+    }
+  };
 
   return (
     <Layout>
       {loading && (
         <div className="fixed inset-0 bg-gray-900 bg-opacity-70 flex items-center justify-center z-50 backdrop-blur-sm">
-          <div className="bg-white p-6 rounded-xl shadow-2xl text-center max-w-sm mx-4 border border-gray-200">
-            <div className="loader mx-auto mb-4"></div>
-            <p className="text-gray-900 font-semibold text-lg mb-1">Checking services status...</p>
-            <p className="text-gray-600 text-sm">Please wait while we verify all endpoints</p>
+          <div className="bg-white p-4 rounded-xl shadow-2xl text-center max-w-xs mx-2 border border-gray-200">
+            <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-indigo-600 mx-auto mb-3"></div>
+            <p className="text-gray-900 font-semibold text-base">Checking services...</p>
+            <p className="text-gray-600 text-xs">Please wait</p>
           </div>
         </div>
       )}
-
-      <div className="container mx-auto px-4 py-6 mt-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">API Services Dashboard</h1>
-            <p className="text-gray-600 mt-2">Monitor and manage all your API endpoints</p>
-          </div>
-          <div className="flex gap-3 mt-4 md:mt-0">
-            <button
-              onClick={mapData}
-              disabled={loading}
-              className="flex items-center px-4 py-2.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50 shadow-sm"
-            >
-              <IoRefresh className="mr-2" size={16} />
-              {loading ? 'Refreshing...' : 'Refresh Status'}
-            </button>
-            <button
-              onClick={() => navigate('/add_sevice')}
-              disabled={loading}
-              className="px-4 py-2.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors disabled:opacity-50 shadow-sm"
-            >
-              Add New Service
-            </button>
-          </div>
-        </div>
-
-        {/* Statistics Dashboard */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5 mb-8">
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-5 rounded-xl shadow-sm border border-blue-100">
-            <div className="flex items-center">
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <IoBarChart className="text-blue-600" size={20} />
-              </div>
-              <div className="ml-4">
-                <h3 className="text-sm font-medium text-gray-500">Total APIs</h3>
-                <p className="mt-1 text-2xl font-bold text-gray-900">{apiStats.totalApis}</p>
-              </div>
+      <div className="container mx-auto px-2 sm:px-4 py-4">
+        {/* Sticky Header */}
+        <div className="sticky top-0 bg-white z-10 py-3 sm:shadow-md">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">API Services Dashboard</h1>
+              <p className="text-gray-600 text-xs sm:text-sm mt-1">Monitor your API endpoints</p>
             </div>
-          </div>
-
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-5 rounded-xl shadow-sm border border-green-100">
-            <div className="flex items-center">
-              <div className="p-3 bg-green-100 rounded-lg">
-                <IoBarChart className="text-green-600" size={20} />
-              </div>
-              <div className="ml-4">
-                <h3 className="text-sm font-medium text-gray-500">Working APIs</h3>
-                <p className="mt-1 text-2xl font-bold text-green-700">{apiStats.workingApis}</p>
-                <p className="text-xs text-green-600">{apiStats.successRate}% success rate</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-r from-red-50 to-orange-50 p-5 rounded-xl shadow-sm border border-red-100">
-            <div className="flex items-center">
-              <div className="p-3 bg-red-100 rounded-lg">
-                <IoBarChart className="text-red-600" size={20} />
-              </div>
-              <div className="ml-4">
-                <h3 className="text-sm font-medium text-gray-500">Error APIs</h3>
-                <p className="mt-1 text-2xl font-bold text-red-700">{apiStats.errorApis}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-r from-purple-50 to-violet-50 p-5 rounded-xl shadow-sm border border-purple-100">
-            <div className="flex items-center">
-              <div className="p-3 bg-purple-100 rounded-lg">
-                <IoRefresh className="text-purple-600" size={20} />
-              </div>
-              <div className="ml-4">
-                <h3 className="text-sm font-medium text-gray-500">Refresh Count</h3>
-                <p className="mt-1 text-2xl font-bold text-purple-700">{apiStats.refreshCount}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-r from-cyan-50 to-teal-50 p-5 rounded-xl shadow-sm border border-cyan-100">
-            <div className="flex items-center">
-              <div className="p-3 bg-cyan-100 rounded-lg">
-                <IoBarChart className="text-cyan-600" size={20} />
-              </div>
-              <div className="ml-4">
-                <h3 className="text-sm font-medium text-gray-500">Data Added</h3>
-                <p className="mt-1 text-2xl font-bold text-cyan-700">{apiStats.dataAdditionCount}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Search and Filters Section */}
-        <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200 mb-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">API Services</h2>
             <div className="flex gap-2">
-              <div className="relative w-full md:w-80">
-                <IoSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-                <input
-                  type="text"
-                  placeholder="Search by name, method, status, error, or serial..."
-                  className="pl-10 pr-10 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-full"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-                {search && (
-                  <button
-                    onClick={clearAllFilters}
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">S.No Filter</label>
-              <input
-                type="text"
-                placeholder="Filter by S.No"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                value={serialNumberFilter}
-                onChange={(e) => setSerialNumberFilter(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Method Filter</label>
-              <input
-                type="text"
-                placeholder="Filter by method"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                value={methodSearch}
-                onChange={(e) => setMethodSearch(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Status Filter</label>
-              <input
-                type="text"
-                placeholder="Filter by status"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                value={statusSearch}
-                onChange={(e) => setStatusSearch(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Error Filter</label>
-              <input
-                type="text"
-                placeholder="Filter by error"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                value={errorSearch}
-                onChange={(e) => setErrorSearch(e.target.value)}
-              />
+              <button
+                onClick={fetchData}
+                disabled={loading}
+                className="flex items-center px-3 py-2 text-xs sm:text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg disabled:opacity-50 shadow-sm touch-manipulation"
+                aria-label="Refresh API status"
+              >
+                <IoRefresh className="mr-1 sm:mr-2" size={14} />
+                {loading ? 'Refreshing...' : 'Refresh'}
+              </button>
+              <button
+                onClick={() => navigate('/add_sevice')}
+                disabled={loading}
+                className="px-3 py-2 text-xs sm:text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg disabled:opacity-50 shadow-sm touch-manipulation"
+                aria-label="Add new service"
+              >
+                Add Service
+              </button>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4 my-4">
+          {[
+            { label: 'Total APIs', value: apiStats.totalApis, icon: IoBarChart, color: 'blue' },
+            { label: 'Working APIs', value: `${apiStats.workingApis} (${apiStats.successRate}%)`, icon: IoBarChart, color: 'green' },
+            { label: 'Error APIs', value: apiStats.errorApis, icon: IoBarChart, color: 'red' },
+            { label: 'Refresh Count', value: apiStats.refreshCount, icon: IoRefresh, color: 'purple' },
+            { label: 'Data Added', value: apiStats.dataAdditionCount, icon: IoBarChart, color: 'cyan' },
+          ].map((stat, index) => (
+            <div
+              key={index}
+              className={`bg-gradient-to-r from-${stat.color}-50 to-${stat.color}-100 p-3 sm:p-4 rounded-lg shadow-sm border border-${stat.color}-100 transition-transform hover:scale-105`}
+            >
+              <div className="flex items-center">
+                <div className={`p-2 bg-${stat.color}-100 rounded-md`}>
+                  <stat.icon className={`text-${stat.color}-600`} size={16} />
+                </div>
+                <div className="ml-2 sm:ml-3">
+                  <h3 className="text-xs font-medium text-gray-500">{stat.label}</h3>
+                  <p className={`mt-1 text-base sm:text-lg font-bold text-${stat.color}-700`}>{stat.value}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Filters Section */}
+        <div className="bg-white p-3 sm:p-4 rounded-lg shadow-sm border border-gray-200 mb-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base sm:text-lg font-semibold text-gray-900">API Services</h2>
+            <button
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
+              className="text-indigo-600 hover:text-indigo-800 text-xs sm:text-sm font-medium flex items-center gap-1 sm:hidden"
+              aria-label={isFilterOpen ? 'Hide filters' : 'Show filters'}
+            >
+              <IoSearch size={16} />
+              {isFilterOpen ? 'Hide Filters' : 'Show Filters'}
+            </button>
+          </div>
+          <div className="relative mb-3">
+            <IoSearch className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+            <input
+              type="text"
+              placeholder="Search by name, method, status..."
+              className="pl-8 pr-8 py-2 text-xs sm:text-sm border text-black font-semibold border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 w-full"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              aria-label="Search APIs"
+            />
+            {search && (
+              <button
+                onClick={clearAllFilters}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                aria-label="Clear search"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+          <div className={`${isFilterOpen ? 'block' : 'hidden'} sm:block grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3`}>
+            {[
+              { label: 'S.No Filter', value: serialNumberFilter, setValue: setSerialNumberFilter, placeholder: 'Filter by S.No' },
+              { label: 'Method Filter', value: methodSearch, setValue: setMethodSearch, placeholder: 'Filter by method' },
+              { label: 'Status Filter', value: statusSearch, setValue: setStatusSearch, placeholder: 'Filter by status' },
+              { label: 'Error Filter', value: errorSearch, setValue: setErrorSearch, placeholder: 'Filter by error' },
+            ].map((filter, index) => (
+              <div key={index}>
+                <label className="block text-xs font-medium text-gray-700 mb-1">{filter.label}</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder={filter.placeholder}
+                    className="w-full px-2 py-1.5 text-xs sm:text-sm border text-black font-semibold border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
+                    value={filter.value}
+                    onChange={(e) => filter.setValue(e.target.value)}
+                    aria-label={filter.label}
+                  />
+                  {filter.value && (
+                    <button
+                      onClick={() => filter.setValue('')}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      aria-label={`Clear ${filter.label}`}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Table */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto snap-x">
+            <table className="min-w-[700px] w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50 sticky top-0 z-10 shadow-sm">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">S.No</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payload</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Error</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[60px]">
+                    <button
+                      onClick={() => handleSort('globalIndex')}
+                      className="flex items-center gap-1 hover:text-indigo-600"
+                      aria-label="Sort by S.No"
+                    >
+                      S.No
+                      {sortConfig.key === 'globalIndex' && (
+                        <span>
+                          {sortConfig.direction === 'asc' ? '↑' : sortConfig.direction === 'desc' ? '↓' : ''}
+                        </span>
+                      )}
+                    </button>
+                  </th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">
+                    <button
+                      onClick={() => handleSort('services_name')}
+                      className="flex items-center gap-1 hover:text-indigo-600"
+                      aria-label="Sort by Service"
+                    >
+                      Service
+                      {sortConfig.key === 'services_name' && (
+                        <span>
+                          {sortConfig.direction === 'asc' ? '↑' : sortConfig.direction === 'desc' ? '↓' : ''}
+                        </span>
+                      )}
+                    </button>
+                  </th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[150px] hidden sm:table-cell">
+                    <button
+                      onClick={() => handleSort('request_payload')}
+                      className="flex items-center gap-1 hover:text-indigo-600"
+                      aria-label="Sort by Payload"
+                    >
+                      Payload
+                      {sortConfig.key === 'request_payload' && (
+                        <span>
+                          {sortConfig.direction === 'asc' ? '↑' : sortConfig.direction === 'desc' ? '↓' : ''}
+                        </span>
+                      )}
+                    </button>
+                  </th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[80px]">
+                    <button
+                      onClick={() => handleSort('method')}
+                      className="flex items-center gap-1 hover:text-indigo-600"
+                      aria-label="Sort by Method"
+                    >
+                      Method
+                      {sortConfig.key === 'method' && (
+                        <span>
+                          {sortConfig.direction === 'asc' ? '↑' : sortConfig.direction === 'desc' ? '↓' : ''}
+                        </span>
+                      )}
+                    </button>
+                  </th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[80px]">
+                    <button
+                      onClick={() => handleSort('status_code')}
+                      className="flex items-center gap-1 hover:text-indigo-600"
+                      aria-label="Sort by Status"
+                    >
+                      Status
+                      {sortConfig.key === 'status_code' && (
+                        <span>
+                          {sortConfig.direction === 'asc' ? '↑' : sortConfig.direction === 'desc' ? '↓' : ''}
+                        </span>
+                      )}
+                    </button>
+                  </th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px] hidden sm:table-cell">
+                    <button
+                      onClick={() => handleSort('error')}
+                      className="flex items-center gap-1 hover:text-indigo-600"
+                      aria-label="Sort by Error"
+                    >
+                      Error
+                      {sortConfig.key === 'error' && (
+                        <span>
+                          {sortConfig.direction === 'asc' ? '↑' : sortConfig.direction === 'desc' ? '↓' : ''}
+                        </span>
+                      )}
+                    </button>
+                  </th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px]">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {currentItems.map((item) => (
                   <tr key={item.globalIndex} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {item.globalIndex}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium text-gray-900">{item.globalIndex}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900 truncate max-w-[100px] sm:max-w-[150px]" title={item.services_name || '—'}>
                       {item.services_name || '—'}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-900" title={item.request_payload ? JSON.stringify(item.request_payload) : '—'}>
-                      {item.request_payload ? JSON.stringify(item.request_payload).substring(0, 50) + '...' : '—'}
+                    <td
+                      className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900 truncate max-w-[120px] hidden sm:table-cell"
+                      title={item.request_payload ? JSON.stringify(item.request_payload) : '—'}
+                    >
+                      {item.request_payload ? JSON.stringify(item.request_payload).substring(0, 20) + '...' : '—'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <span className="px-2.5 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
-                        {item.method}
-                      </span>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900">
+                      <span className="px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">{item.method}</span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">
                       <div className="flex items-center">
-                        <span className={`w-3 h-3 rounded-full inline-block mr-2 ${statusDot(item.status_code)}`} />
-                        <span className={`font-medium ${statusColor(item.status_code)}`}>
-                          {item.status_code}
-                        </span>
+                        <span className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full inline-block mr-1 sm:mr-2 ${statusDot(item.status_code)}`} />
+                        <span className={`font-medium ${statusColor(item.status_code)}`}>{item.status_code}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate" title={item.error || ''}>
+                    <td
+                      className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900 truncate max-w-[100px] hidden sm:table-cell"
+                      title={item.error || ''}
+                    >
                       {item.error || '—'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">
                       <button
-                        className="text-indigo-600 hover:text-indigo-900 transition-colors"
                         onClick={() => {
-                          Swal.fire({
-                            title: `<strong style="font-size:12px;">${item.services_name || 'Service'}</strong>`,
-                            html: `
-    <div style="text-align: left; font-size: 11px; line-height: 1.5 ; padding: 6px; max-height: 220px; width: 260px; overflow-y: auto;">
-      <p><strong>Status:</strong> <span class="${statusColor(item.status_code)}">${item.status_code || 'N/A'}</span></p>
-      ${item.error ? `<p><strong>Error:</strong> ${item.error}</p>` : ''}
-      ${item.api_url ? `
-        <p class="mt-1"><strong>API URL:</strong></p>
-        <div style="word-break: break-all; background-color: #f9f9f9; padding: 6px; border-radius: 4px; font-size: 12px;">
-          <a href="${item.api_url}" target="_blank" class="text-blue-600 hover:underline">${item.api_url}</a>
-        </div>
-      ` : ''}
-      ${item.duration_ms ? `<p class="mt-1"><strong>Response Time:</strong> ${item.duration_ms}ms</p>` : ''}
-
-      <div class="mt-3">
-        <h3 class="text-sm font-semibold">Detailed Information</h3>
-        <table class="min-w-full mt-1 border-collapse border border-gray-300 text-xs">
-          <thead>
-            <tr class="bg-gray-100">
-              <th class="px-2 py-1 text-left font-medium text-gray-700">Field</th>
-              <th class="px-2 py-1 text-left font-medium text-gray-700">Value</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td class="px-2 py-1 border border-gray-300 font-medium">Service Name</td>
-              <td class="px-2 py-1 border border-gray-300">${item.services_name || 'N/A'}</td>
-            </tr>
-            <tr>
-              <td class="px-2 py-1 border border-gray-300 font-medium">Auth Credentials</td>
-              <td class="px-2 py-1 border border-gray-300">
-                <pre style="background-color: #f9f9f9; padding: 4px; border-radius: 2px; margin: 0; font-size: 11px;">${item.auth ? JSON.stringify(item.auth, null, 2) : 'N/A'}</pre>
-              </td>
-            </tr>
-            <tr>
-              <td class="px-2 py-1 border border-gray-300 font-medium">Request Payload</td>
-              <td class="px-2 py-1 border border-gray-300">
-                <pre style="background-color: #f9f9f9; padding: 4px; border-radius: 2px; margin: 0; font-size: 11px;">${item.request_payload ? JSON.stringify(item.request_payload, null, 2) : 'N/A'}</pre>
-              </td>
-            </tr>
-            <tr>
-              <td class="px-2 py-1 border border-gray-300 font-medium">Description</td>
-              <td class="px-2 py-1 border border-gray-300">${item.description || 'N/A'}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  `,
-                            width: '380px',
-                            showCancelButton: true,
-                            cancelButtonText: 'Close',
-                            showConfirmButton:
-                              item.status_code >= 400 ||
-                              item.status_code === 'ERROR' ||
-                              item.status_code === 'UNSUPPORTED',
-                            confirmButtonText: 'Retry',
-                            icon: item.status_code === 200
-                              ? 'success'
-                              : (item.status_code >= 400 || item.status_code === 'ERROR' || item.status_code === 'UNSUPPORTED')
-                                ? 'error'
-                                : 'info',
-                            customClass: {
-                              popup: 'rounded-lg p-2',
-                              container: 'backdrop-blur-md',
-                            }
-                          });
-
+                          setIsOpen(true);
+                          setDetail(item);
                         }}
+                        className="px-3 py-1.5 text-xs sm:text-sm bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700 transition-colors touch-manipulation"
+                        aria-label="View API details"
                       >
-                        View Details
+                        Details
                       </button>
                     </td>
                   </tr>
                 ))}
                 {currentItems.length === 0 && (
                   <tr>
-                    <td colSpan="7" className="px-6 py-4 text-center text-sm text-gray-500">
+                    <td colSpan="7" className="px-2 sm:px-4 py-3 text-center text-xs sm:text-sm text-gray-500">
                       No services found matching the filters.
                     </td>
                   </tr>
@@ -1094,28 +1315,258 @@ const YoungbazerFrontend = () => {
             </table>
           </div>
 
-          <div className="bg-white px-6 py-4 border-t border-gray-200">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="text-sm text-gray-700">
+          {/* Modal */}
+          {isOpen && (
+            <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 px-2 sm:px-4 py-4">
+              <div className="bg-white w-full max-w-3xl rounded-lg sm:shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+                {/* Header */}
+                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-3 sm:p-4 text-white relative">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h2 className="text-base sm:text-lg font-bold flex items-center gap-1 sm:gap-2">
+                        <IoBarChart className="text-white" size={16} />
+                        API Service Details
+                      </h2>
+                      <p className="text-indigo-100 text-xs mt-1">API endpoint information</p>
+                    </div>
+                    <div
+                      className={`px-2 py-0.5 rounded-full text-xs font-medium ${detail?.status_code === 200
+                        ? 'bg-green-500/20 text-green-100'
+                        : detail?.status_code >= 400 || detail?.status_code === 'ERROR' || detail?.status_code === 'UNSUPPORTED'
+                          ? 'bg-red-500/20 text-red-100'
+                          : 'bg-yellow-500/20 text-yellow-100'
+                        }`}
+                    >
+                      {detail?.status_code === 200
+                        ? 'Operational'
+                        : detail?.status_code >= 400 || detail?.status_code === 'ERROR' || detail?.status_code === 'UNSUPPORTED'
+                          ? 'Error'
+                          : 'Warning'}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setIsOpen(false)}
+                    className="absolute top-3 right-3 text-white hover:text-indigo-200 p-1.5 rounded-full hover:bg-white/10"
+                    aria-label="Close modal"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Body */}
+                <div className="flex-1 overflow-y-auto p-3 sm:p-4">
+                  <div className="grid grid-cols-1 gap-3 sm:gap-4">
+                    {/* Basic Info */}
+                    <div className="bg-gray-50 p-3 sm:p-4 rounded-lg border border-gray-200">
+                      <h3 className="text-sm sm:text-base font-semibold text-gray-800 mb-3 flex items-center gap-1">
+                        <svg className="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Basic Information
+                      </h3>
+                      <div className="space-y-2 text-xs sm:text-sm">
+                        <div>
+                          <span className="text-xs font-medium text-gray-500 block">Service Name</span>
+                          <span className="font-medium text-gray-900">{detail?.services_name || '—'}</span>
+                        </div>
+                        <div>
+                          <span className="text-xs font-medium text-gray-500 block">Source Name</span>
+                          <span className="font-medium text-gray-900">{detail?.source_name || '—'}</span>
+                        </div>
+                        <div>
+                          <span className="text-xs font-medium text-gray-500 block">auth </span>
+                          <span className="font-medium text-gray-900">{detail?.auth ? JSON.stringify(detail.auth, null, 2) : 'No auth data'}</span>
+                        </div>
+                        <div>
+                          <span className="text-xs font-medium text-gray-500 block">HTTP Method</span>
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-xs font-medium ${detail?.method === 'GET'
+                              ? 'bg-blue-100 text-blue-800'
+                              : detail?.method === 'POST'
+                                ? 'bg-green-100 text-green-800'
+                                : detail?.method === 'PUT'
+                                  ? 'bg-yellow-100 text-yellow-800'
+                                  : detail?.method === 'DELETE'
+                                    ? 'bg-red-100 text-red-800'
+                                    : 'bg-gray-100 text-gray-800'
+                              }`}
+                          >
+                            {detail?.method || '—'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-xs font-medium text-gray-500 block">Serial Number</span>
+                          <span className="font-medium text-gray-900">{detail?.globalIndex || '—'}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Status & Performance */}
+                    <div className="bg-gray-50 p-3 sm:p-4 rounded-lg border border-gray-200">
+                      <h3 className="text-sm sm:text-base font-semibold text-gray-800 mb-3 flex items-center gap-1">
+                        <svg className="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Status & Performance
+                      </h3>
+                      <div className="space-y-2 text-xs sm:text-sm">
+                        <div>
+                          <span className="text-xs font-medium text-gray-500 block">Status Code</span>
+                          <div className="flex items-center gap-2">
+                            <span className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full inline-block ${statusDot(detail?.status_code)}`} />
+                            <span className={`font-medium ${statusColor(detail?.status_code)}`}>{detail?.status_code || '—'}</span>
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-xs font-medium text-gray-500 block">Response Time</span>
+                          <span className="font-medium text-gray-900">{detail?.duration_ms ? `${detail.duration_ms}ms` : '—'}</span>
+                        </div>
+                        <div>
+                          <span className="text-xs font-medium text-gray-500 block">Error Message</span>
+                          <span className="font-medium text-red-600 break-words">{detail?.error || 'No errors detected'}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* API Endpoint */}
+                    <div className="bg-gray-50 p-3 sm:p-4 rounded-lg border border-gray-200">
+                      <h3 className="text-sm sm:text-base font-semibold text-gray-800 mb-3 flex items-center gap-1">
+                        <svg className="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+                          />
+                        </svg>
+                        API Endpoint
+                      </h3>
+                      <div className="bg-gray-100 p-2 rounded-md overflow-x-auto">
+                        <code className="text-xs sm:text-sm text-gray-800 break-all">{detail?.api_url || '—'}</code>
+                      </div>
+                    </div>
+
+                    {/* Request Payload */}
+                    <div className="bg-gray-50 p-3 sm:p-4 rounded-lg border border-gray-200">
+                      <h3 className="text-sm sm:text-base font-semibold text-gray-800 mb-3 flex items-center gap-1">
+                        <svg className="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                        </svg>
+                        Request Payload
+                      </h3>
+                      <div className="bg-gray-900 p-2 sm:p-3 rounded-md overflow-x-auto max-h-40 sm:max-h-48">
+                        <pre className="text-xs text-green-400 overflow-x-auto">{detail?.request_payload ? JSON.stringify(detail.request_payload, null, 2) : 'No payload data'}</pre>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="bg-gray-50 px-3 sm:px-4 py-3 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-3">
+                  <div className="text-xs text-gray-500 flex items-center">
+                    <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Last checked: {new Date().toLocaleString()}
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setIsOpen(false)}
+                      className="px-3 py-1.5 text-xs sm:text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 shadow-sm touch-manipulation"
+                      aria-label="Close modal"
+                    >
+                      Close
+                    </button>
+                    <button
+                      onClick={async () => {
+                        const textToCopy = formatDetailForCopy(detail);
+                        try {
+                          if (navigator.clipboard && navigator.clipboard.writeText) {
+                            await navigator.clipboard.writeText(textToCopy);
+                            Swal.fire({
+                              icon: 'success',
+                              title: 'Copied!',
+                              text: 'Service details copied to clipboard',
+                              timer: 1500,
+                              showConfirmButton: false,
+                              position: 'top-end',
+                              toast: true,
+                            });
+                          } else {
+                            const success = fallbackCopyText(textToCopy);
+                            if (success) {
+                              Swal.fire({
+                                icon: 'success',
+                                title: 'Copied!',
+                                text: 'Service details copied to clipboard (fallback method)',
+                                timer: 1500,
+                                showConfirmButton: false,
+                                position: 'top-end',
+                                toast: true,
+                              });
+                            } else {
+                              throw new Error('Fallback copy failed');
+                            }
+                          }
+                        } catch (err) {
+                          console.error('Clipboard copy error:', err);
+                          Swal.fire({
+                            icon: 'error',
+                            title: 'Failed to Copy',
+                            text: 'Unable to access clipboard. Please ensure the site is running on HTTPS or localhost, check browser permissions, or copy manually.',
+                            timer: 2000,
+                            showConfirmButton: false,
+                            position: 'top-end',
+                            toast: true,
+                          });
+                        }
+                      }}
+                      className="px-3 py-1.5 text-xs sm:text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 shadow-sm flex items-center gap-1 touch-manipulation"
+                      aria-label="Copy all API details"
+                    >
+                      <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                        />
+                      </svg>
+                      Copy All Details
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Pagination */}
+          <div className="bg-white px-2 sm:px-4 py-3 border-t border-gray-200">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="text-xs sm:text-sm text-gray-700">
                 Showing <span className="font-medium">{indexOfFirstItem + 1}</span> to{' '}
                 <span className="font-medium">{Math.min(indexOfLastItem, filtered.length)}</span> of{' '}
                 <span className="font-medium">{filtered.length}</span> results
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
                   onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1 || loading}
+                  aria-label="Previous page"
                 >
                   Previous
                 </button>
-                <span className="px-3 py-1.5 text-sm text-gray-700">
+                <span className="px-2 sm:px-3 py-1 text-xs sm:text-sm text-gray-700">
                   Page {currentPage} of {totalPages}
                 </span>
                 <button
-                  className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
                   onClick={() => setCurrentPage((prev) => (prev < totalPages ? prev + 1 : prev))}
                   disabled={currentPage === totalPages || loading}
+                  aria-label="Next page"
                 >
                   Next
                 </button>
@@ -1128,24 +1579,4 @@ const YoungbazerFrontend = () => {
   );
 };
 
-export default YoungbazerFrontend;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+export default YoungbazerFrontend; 
