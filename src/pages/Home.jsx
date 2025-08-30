@@ -1,27 +1,9 @@
-// import Layout from '../component/Layout';
-// import RecentActivities from '../component/RecentActivities';
-
-// const HomePage = () => {
-//     return (
-//         <Layout>
-//             {/* <div className="min-h-screen bg-gray-50"> */}
-//             <div className="min-h-screen bg-gray-50 pt-20 text-bl" > {/* Added pt-20 to add padding top */}
-//                 {/* Navbar */}
-//                 <RecentActivities />
-
-//                 {/* Footer */}
-//             </div>
-//         </Layout>
-//     );
-// };
-
-// export default HomePage;
-
 import { useEffect, useMemo, useRef, useState } from "react";
 import Layout from "../component/Layout";
 import Dashboard from "../component/RecentActivities";
 import axios from "axios";
 import Swal from "sweetalert2";
+import { proxyRequest } from "../component/proxy";
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://192.168.1.239:7070';
 const HomePage = () => {
     const [globalServicesData, setGlobalServicesData] = useState([]);
@@ -47,126 +29,86 @@ const HomePage = () => {
         };
     }, [globalServicesData]);
 
-    const fetchdata = () => {
+
+    // Fetch data
+    const fetchData = async () => {
         setLoading(true);
-        const controller = new AbortController();
-        abortControllersRef.current.push(controller);
-        // const API_BASE = 'http://192.168.1.239:7070';
-        axios.get(`${API_BASE}/get-services`, {
-            timeout: 10000,
-            signal: controller.signal
-        })
-            .then((response) => {
-                setServices(response.data.data);
-            })
-            .catch((error) => {
-                if (axios.isCancel(error)) return; // Ignore canceled requests
-                console.error("error", error);
-                Swal.fire({
-                    title: "Error!",
-                    text: "Failed to fetch services data",
-                    icon: "error",
-                    confirmButtonText: "OK"
-                });
-            })
-            .finally(() => setLoading(false));
+        try {
+            const response = await axios.get(`${API_BASE}/get-services`);
+            setServices(response.data.data || []);
+            setRefreshCount((prev) => prev + 1);
+        } catch (error) {
+            Swal.fire('Error!', error.message || 'Failed to fetch services', 'error');
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const mapingdata = () => {
+    // Map data
+    const mapData = async () => {
+        if (services.length === 0) return;
         setLoading(true);
-        setServicesData([]);
+        try {
+            const results = await Promise.allSettled(
+                services.map(async (service, index) => {
+                    const { method, api_url, auth, request_payload } = service;
+                    const started = Date.now();
+                    try {
+                        const res = await proxyRequest({
+                            url: api_url,
+                            method,
+                            payload: request_payload,
+                            auth,
+                        });
+                        return {
+                            globalIndex: index + 1,
+                            services_name: service.services_name || api_url,
+                            source_name: service.source_name,
+                            method,
+                            auth,
+                            api_url,
+                            request_payload,
+                            status_code: 200,
+                            error: null,
+                            duration_ms: Date.now() - started,
+                            response_data: res.data,
+                        };
+                    } catch (err) {
+                        return {
+                            globalIndex: index + 1,
+                            services_name: service.services_name || api_url,
+                            source_name: service.source_name,
+                            method,
+                            auth,
+                            api_url,
+                            request_payload,
+                            status_code: 'ERROR',
+                            error: err.message,
+                            duration_ms: Date.now() - started,
+                        };
+                    }
+                })
+            );
+            const final = results.map((r) => (r.status === 'fulfilled' ? r.value : r.reason));
+            setGlobalServicesData(final);
+            setServicesData(final);
+        } catch (err) {
+            console.error('❌ MapData Failed:', err.message);
+        } finally {
+            setLoading(false);
+        }
 
-        // Cancel previous mapping requests
-        abortControllersRef.current.forEach(ctrl => ctrl.abort());
-        abortControllersRef.current = [];
-
-        const calls = services.map((dt) => {
-            const method = dt.method?.toUpperCase();
-            const url = dt.api_url;
-            const auth = dt.auth;
-            const payload = dt.request_payload || {};
-            const services_name = dt.services_name || dt.name || url;
-            const controller = new AbortController();
-            abortControllersRef.current.push(controller);
-
-            const config = {
-                ...(auth ? { auth: { username: auth.Username, password: auth.password } } : {}),
-                timeout: 5000,
-                signal: controller.signal
-            };
-
-            let axiosCall;
-            if (["GET", "DELETE"].includes(method)) {
-                axiosCall = axios[method.toLowerCase()](url, config);
-            } else if (["POST", "PUT", "PATCH"].includes(method)) {
-                axiosCall = axios[method.toLowerCase()](url, payload, config);
-            } else {
-                return Promise.resolve({
-                    services_name,
-                    method,
-                    api_url: url,
-                    status_code: "UNSUPPORTED",
-                    error: "Unsupported method",
-                    duration_ms: 0,
-                });
-            }
-
-            const started = Date.now();
-            return axiosCall
-                .then((response) => ({
-                    services_name,
-                    method,
-                    api_url: url,
-                    status_code: response.status,
-                    error: null,
-                    duration_ms: Date.now() - started,
-                }))
-                .catch((err) => ({
-                    services_name,
-                    method,
-                    api_url: url,
-                    status_code: err?.response?.status ?? "ERROR",
-                    error: err?.response?.data?.message ||
-                        err?.response?.data?.error ||
-                        err?.code || err?.message || "Unknown error",
-                    duration_ms: Date.now() - started,
-                }));
-        });
-
-        Promise.all(calls)
-            .then((rows) => {
-                const indexedRows = rows.map((row, index) => ({
-                    ...row,
-                    globalIndex: index + 1
-                }));
-                setGlobalServicesData(indexedRows);
-                setServicesData(indexedRows);
-            })
-            .catch((error) => {
-                if (axios.isCancel(error)) return;
-                console.error("Error in mapping data:", error);
-                Swal.fire({
-                    title: "Error!",
-                    text: "Failed to check some API statuses",
-                    icon: "warning",
-                    confirmButtonText: "OK"
-                });
-            })
-            .finally(() => setLoading(false));
     };
 
     useEffect(() => {
-        fetchdata();
-        return () => {
-            abortControllersRef.current.forEach(ctrl => ctrl.abort());
-        };
+        fetchData();
     }, []);
 
     useEffect(() => {
-        if (services.length > 0) {
-            mapingdata();
-        }
+        if (services.length > 0) mapData();
     }, [services]);
+    const [refreshCount, setRefreshCount] = useState(0);
+
 
     return (
         <Layout>
