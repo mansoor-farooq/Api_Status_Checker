@@ -8,6 +8,8 @@ import YoungBazerHealth from '../pages/YoungBazerHealth'
 import Youngbazerfruntend from '../pages/Youngbazerfruntend'
 // import Perfect from '../pages/Perfect'
 import AddServices from '../pages/AddServices'
+import About_us from '../component/About_us'
+import Contactus from '../component/Contactus'
 
 const Addroute = () => {
     return (
@@ -20,7 +22,11 @@ const Addroute = () => {
 
                     <Route path='/youngBazer' element={<YoungBazerHealth />} />
 
-                    <Route path='/fruntend_youngbazer' element={<Youngbazerfruntend />} />
+                    <Route path='/services_status' element={<Youngbazerfruntend />} />
+
+                    <Route path='/contact' element={<Contactus />} />
+
+                    <Route path='/about' element={<About_us />} />
 
                     <Route path='/add_sevice' element={<AddServices />} />
                 </Route>

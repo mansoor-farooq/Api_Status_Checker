@@ -15,11 +15,6 @@
 //         acceptTerms: false
 //     });
 
-
-
-
-
-
 //     const [errors, setErrors] = useState({});
 //     const [passwordStrength, setPasswordStrength] = useState(0);
 //     const [showPassword, setShowPassword] = useState(false);
