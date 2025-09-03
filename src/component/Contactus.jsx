@@ -20,8 +20,8 @@ const Contactus = () => {
             <div className="w-full max-w-4xl bg-white/80 backdrop-blur-md shadow-2xl rounded-3xl p-10">
                 {/* Header */}
                 <div className="text-center mb-8">
-                    <h1 className="text-4xl font-bold text-gray-900 drop-shadow-sm">Contact Us</h1>
-                    <p className="text-gray-600 mt-2 text-lg">
+                    <h1 className="text-4xl font-bold text-black drop-shadow-sm">Contact Us</h1>
+                    <p className="text-black mt-2 text-lg">
                         We’d love to hear from you! Fill out the form below and we’ll get in touch.
                     </p>
                 </div>
@@ -30,7 +30,7 @@ const Contactus = () => {
                 <form className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Name */}
                     <div className="relative">
-                        <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-500 w-5 h-5" />
+                        <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-black w-5 h-5" />
                         <input
                             required
                             type="text"
@@ -42,7 +42,7 @@ const Contactus = () => {
 
                     {/* Email */}
                     <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-500 w-5 h-5" />
+                        <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-black w-5 h-5" />
                         <input
                             required
                             type="email"
@@ -55,7 +55,7 @@ const Contactus = () => {
                     {/* Phone */}
                     {/* Phone */}
                     <div className="relative">
-                        <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-500 w-5 h-5" />
+                        <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-black w-5 h-5" />
                         <input
                             type="tel"
                             placeholder="03xxxxxxxxx"
@@ -71,7 +71,7 @@ const Contactus = () => {
 
                     {/* Message */}
                     <div className="relative md:col-span-2">
-                        <MessageSquare className="absolute left-3 top-5 text-blue-500 w-5 h-5" />
+                        <MessageSquare className="absolute left-3 top-5 text-black w-5 h-5" />
                         <textarea
                             required
                             rows="5"
@@ -85,7 +85,7 @@ const Contactus = () => {
                     <div className="md:col-span-2">
                         <button
                             type="submit"
-                            className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold py-3 rounded-xl shadow-md hover:from-blue-600 hover:to-indigo-600 transition transform hover:scale-[1.02]"
+                            className="w-full bg-gradient-to-r from-black to-black text-white font-semibold py-3 rounded-xl shadow-md hover:from-gray-900 hover:to-gray-600 transition transform hover:scale-[1.02]"
                             onClick={handleSubmit}
                         >
                             Send Message
