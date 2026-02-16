@@ -19,16 +19,7 @@ const AddServices = () => {
     const [auth, setauth] = useState('');
     const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://192.168.1.239:7070';
     const navigate = useNavigate();
-    console.log("status", status);
 
-    console.log("status", status);
-    console.log("name", name);
-    console.log("description", description);
-    console.log("apiUrl", apiUrl);
-    console.log("apikey", apikey);
-    console.log("payload", rqpayload);
-    console.log("method", method);
-    console.log("auth", auth);
 
 
 
@@ -152,7 +143,7 @@ const AddServices = () => {
                 }
             })
             .catch((error) => {
-                console.log(error, "error")
+
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',

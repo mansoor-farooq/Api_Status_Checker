@@ -92,7 +92,7 @@
 //     const handleSubmit = (e) => {
 //         e.preventDefault();
 //         if (validateForm()) {
-//             console.log('Form submitted:', formData);
+//            
 //             alert('Account created successfully! Please check your email for verification.');
 //         }
 //     };

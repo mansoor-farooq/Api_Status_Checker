@@ -37,7 +37,7 @@ const YoungbazerFrontend = () => {
   const itemsPerPage = 8;
   const navigate = useNavigate();
   const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://192.168.1.239:7070';
-  console.log("services", services);
+
 
   // Calculate API stats
   const apiStats = useMemo(() => {
@@ -240,7 +240,7 @@ const YoungbazerFrontend = () => {
   const currentItems = filtered.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
 
-  console.log("currentItems", currentItems);
+
 
   // Function to format detail object for copying in plain text
   const formatDetailForCopy = (detail) => {
@@ -343,11 +343,10 @@ ${detail.request_payload ? JSON.stringify(detail.request_payload, null, 2) : 'No
           </div>
         </div>
       )}
-      <div className="container mx-auto px-2 sm:px-4 py-4">
+      <div className="container mx-auto px-2 sm:px-4 py-4 mt-6">
 
         {/* Sticky Header */}
-        {/* Sticky Header */}
-        <div className="sticky top-2 bg-white/90 backdrop-blur-md z-20 py-4 px-3 sm:px-5 shadow-lg rounded-xl border border-gray-100">
+        <div className="sticky mt-6 top-2 bg-white/90 backdrop-blur-md z-20 py-4 px-3 sm:px-5 shadow-lg rounded-xl border border-gray-100">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             {/* Title */}
             <div>

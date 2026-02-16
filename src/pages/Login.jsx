@@ -26,8 +26,6 @@ const Login = () => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        // console.log('Email:', email);
-        // console.log('Password:', password);
         const matchedUser = dumyatanpt.find(
             user => user.email.toLowerCase() === email.trim().toLowerCase() && user.password === password
         );

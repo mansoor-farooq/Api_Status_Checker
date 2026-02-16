@@ -38,7 +38,6 @@ const YoungBazerHealth = () => {
     const getCachedData = (key) => {
         const cached = cache.get(key);
         if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-            console.log(`Using cached data for ${key}`);
             return cached.data;
         }
         return null;
@@ -46,7 +45,6 @@ const YoungBazerHealth = () => {
 
     // Helper function to set cache
     const setCachedData = (key, data) => {
-        console.log(`Caching data for ${key}`);
         cache.set(key, { data, timestamp: Date.now() });
     };
 

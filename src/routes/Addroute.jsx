@@ -4,7 +4,7 @@ import Home from '../pages/Home'
 import Login from '../pages/Login'
 import { Fragment } from 'react'
 import PrivateRoutes from './Private_route'; // adjust the path if needed
-import YoungBazerHealth from '../pages/YoungBazerHealth'
+// import YoungBazerHealth from '../pages/YoungBazerHealth'
 import Youngbazerfruntend from '../pages/Youngbazerfruntend'
 // import Perfect from '../pages/Perfect'
 import AddServices from '../pages/AddServices'
@@ -12,6 +12,7 @@ import About_us from '../component/About_us'
 import Contactus from '../component/Contactus'
 
 const Addroute = () => {
+
     return (
         <Fragment>
             <Routes>
@@ -20,7 +21,7 @@ const Addroute = () => {
                     {""}
                     <Route path='/' element={<Home />} />
 
-                    <Route path='/youngBazer' element={<YoungBazerHealth />} />
+                    {/* <Route path='/youngBazer' element={<YoungBazerHealth />} /> */}
 
                     <Route path='/services_status' element={<Youngbazerfruntend />} />
 
